@@ -1,0 +1,68 @@
+<div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+  <h2 class="mb-2 font-headline-md text-[16px] text-primary">Management</h2>
+  <p class="mb-4 text-sm text-on-surface-variant">Operational pages moved out of the side menu for a cleaner workflow.</p>
+  <div class="flex flex-wrap gap-2">
+    <a href="{% url 'documents:extraction_logs' %}" class="inline-flex items-center gap-2 rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-on-surface transition-colors hover:text-primary">
+      <span class="material-symbols-outlined text-[16px]">timeline</span>
+      Extraction logs
+    </a>
+    <a href="{% url 'documents:ai_runtime_logs' %}" class="inline-flex items-center gap-2 rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-on-surface transition-colors hover:text-primary">
+      <span class="material-symbols-outlined text-[16px]">smart_toy</span>
+      AI logs
+    </a>
+    <a href="{% url 'documents:categories' %}" class="inline-flex items-center gap-2 rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-on-surface transition-colors hover:text-primary">
+      <span class="material-symbols-outlined text-[16px]">grid_view</span>
+      Categories
+    </a>
+  </div>
+</div>
+
+<div class="mt-4 rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+  <h3 class="mb-2 text-sm text-primary">API Keys</h3>
+  {% if new_api_key_once %}
+    <div class="mb-3 rounded border border-emerald-500/40 bg-emerald-500/10 p-2 text-xs text-emerald-300">
+      New key (shown once): <code>{{ new_api_key_once }}</code>
+    </div>
+  {% endif %}
+  <form method="post" class="mb-3">
+    {% csrf_token %}
+    <button type="submit" name="create_api_key" value="1" class="rounded border border-outline-variant px-3 py-1 text-xs text-on-surface hover:text-primary">Create API key</button>
+  </form>
+  <ul class="space-y-1 text-xs text-on-surface-variant">
+    {% for k in api_keys %}
+      <li class="flex items-center justify-between border-b border-[#262626] py-1">
+        <span>{{ k.name }} · {{ k.key_prefix }}... {% if not k.is_active %}(revoked){% endif %}</span>
+        {% if k.is_active %}
+        <form method="post">{% csrf_token %}<button class="text-error" name="revoke_api_key" value="{{ k.pk }}">Revoke</button></form>
+        {% endif %}
+      </li>
+    {% empty %}
+      <li>No API keys yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="mt-4 rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+  <h3 class="mb-2 text-sm text-primary">Webhook Endpoints</h3>
+  <form method="post" class="grid grid-cols-1 gap-2 md:grid-cols-2">
+    {% csrf_token %}
+    {{ webhook_form.name }}
+    {{ webhook_form.target_url }}
+    {{ webhook_form.signing_secret }}
+    {{ webhook_form.subscribed_events }}
+    {{ webhook_form.timeout_seconds }}
+    {{ webhook_form.max_retries }}
+    <label class="flex items-center gap-2 text-xs text-on-surface-variant">{{ webhook_form.is_active }} Active</label>
+    <button type="submit" name="create_webhook" value="1" class="rounded border border-outline-variant px-3 py-1 text-xs text-on-surface hover:text-primary md:col-span-2">Add webhook</button>
+  </form>
+  <ul class="mt-3 space-y-1 text-xs text-on-surface-variant">
+    {% for w in webhooks %}
+      <li class="flex items-center justify-between border-b border-[#262626] py-1">
+        <span>{{ w.name }} · {{ w.target_url }} {% if not w.is_active %}(inactive){% endif %}</span>
+        <form method="post">{% csrf_token %}<button class="text-error" name="delete_webhook" value="{{ w.pk }}">Delete</button></form>
+      </li>
+    {% empty %}
+      <li>No webhook endpoints configured.</li>
+    {% endfor %}
+  </ul>
+</div>

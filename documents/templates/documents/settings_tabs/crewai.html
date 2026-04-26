@@ -1,0 +1,60 @@
+<div class="rounded-lg border border-outline-variant/40 bg-surface-container-low p-5">
+  <h2 class="mb-1 font-headline-md text-[16px] text-primary">CrewAI Advanced Agent Settings</h2>
+  <p class="mb-4 text-xs text-on-surface-variant">Tune each Crew stage independently. Leave model fields blank to inherit the main text model.</p>
+
+  <div class="mb-3 flex items-start gap-3">
+    {{ form.use_crewai_hints }}
+    <div>
+      <label for="{{ form.use_crewai_hints.id_for_label }}" class="font-label-sm text-on-surface">{{ form.use_crewai_hints.label }}</label>
+      {% if form.use_crewai_hints.help_text %}<p class="text-xs text-on-surface-variant">{{ form.use_crewai_hints.help_text }}</p>{% endif %}
+    </div>
+  </div>
+
+  <div class="grid gap-4 sm:grid-cols-2">
+    <div>
+      <label for="{{ form.crew_read_model.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Reader agent model</label>
+      {{ form.crew_read_model }}
+      {% if form.crew_read_model.errors %}<p class="mt-1 text-sm text-error">{{ form.crew_read_model.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.crew_structure_model.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Structurer agent model</label>
+      {{ form.crew_structure_model }}
+      {% if form.crew_structure_model.errors %}<p class="mt-1 text-sm text-error">{{ form.crew_structure_model.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.crew_validate_model.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Validator agent model</label>
+      {{ form.crew_validate_model }}
+      {% if form.crew_validate_model.errors %}<p class="mt-1 text-sm text-error">{{ form.crew_validate_model.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.crew_category_model.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Categorizer agent model</label>
+      {{ form.crew_category_model }}
+      {% if form.crew_category_model.errors %}<p class="mt-1 text-sm text-error">{{ form.crew_category_model.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.crew_stage_timeout_seconds.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Per-stage timeout (seconds)</label>
+      {{ form.crew_stage_timeout_seconds }}
+      {% if form.crew_stage_timeout_seconds.errors %}<p class="mt-1 text-sm text-error">{{ form.crew_stage_timeout_seconds.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.crew_max_retries.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Max retries per stage</label>
+      {{ form.crew_max_retries }}
+      {% if form.crew_max_retries.errors %}<p class="mt-1 text-sm text-error">{{ form.crew_max_retries.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.max_document_rescan_attempts.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Max document rescan attempts</label>
+      {{ form.max_document_rescan_attempts }}
+      {% if form.max_document_rescan_attempts.errors %}<p class="mt-1 text-sm text-error">{{ form.max_document_rescan_attempts.errors.0 }}</p>{% endif %}
+    </div>
+    <div>
+      <label for="{{ form.rescan_backoff_seconds.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Rescan backoff (seconds)</label>
+      {{ form.rescan_backoff_seconds }}
+      {% if form.rescan_backoff_seconds.errors %}<p class="mt-1 text-sm text-error">{{ form.rescan_backoff_seconds.errors.0 }}</p>{% endif %}
+    </div>
+    <div class="sm:col-span-2">
+      <label for="{{ form.crew_hint_max_chars.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Hint size cap (characters)</label>
+      {{ form.crew_hint_max_chars }}
+      {% if form.crew_hint_max_chars.errors %}<p class="mt-1 text-sm text-error">{{ form.crew_hint_max_chars.errors.0 }}</p>{% endif %}
+    </div>
+  </div>
+</div>

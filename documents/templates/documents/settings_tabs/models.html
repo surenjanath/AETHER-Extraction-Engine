@@ -1,0 +1,26 @@
+<div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+  <h2 class="mb-3 font-headline-md text-[16px] text-primary">Model Selection</h2>
+  <div class="grid gap-5 sm:grid-cols-2">
+    <div>
+      <label for="{{ form.ollama_text_model.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">{{ form.ollama_text_model.label }}</label>
+      {{ form.ollama_text_model }}
+      {% if form.ollama_text_model.errors %}<p class="mt-1 text-sm text-error">{{ form.ollama_text_model.errors.0 }}</p>{% endif %}
+      <p id="prepare-status-text" class="mt-1 min-h-[1.25rem] text-xs text-on-surface-variant" aria-live="polite"></p>
+      <p class="mt-1 text-xs text-on-surface-variant">Primary model for structured extraction JSON.</p>
+    </div>
+    <div>
+      <label for="{{ form.ollama_ocr_model.id_for_label }}" class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">{{ form.ollama_ocr_model.label }}</label>
+      {{ form.ollama_ocr_model }}
+      {% if form.ollama_ocr_model.errors %}<p class="mt-1 text-sm text-error">{{ form.ollama_ocr_model.errors.0 }}</p>{% endif %}
+      <p id="prepare-status-ocr" class="mt-1 min-h-[1.25rem] text-xs text-on-surface-variant" aria-live="polite"></p>
+      <p class="mt-1 text-xs text-on-surface-variant">OCR model for text extraction from image content.</p>
+    </div>
+  </div>
+  <div class="mt-4 flex items-start gap-3">
+    {{ form.use_vision_extraction }}
+    <div>
+      <label for="{{ form.use_vision_extraction.id_for_label }}" class="font-label-sm text-on-surface">{{ form.use_vision_extraction.label }}</label>
+      {% if form.use_vision_extraction.help_text %}<p class="text-xs text-on-surface-variant">{{ form.use_vision_extraction.help_text }}</p>{% endif %}
+    </div>
+  </div>
+</div>

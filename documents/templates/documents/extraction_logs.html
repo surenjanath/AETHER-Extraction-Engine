@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load dict_extras %}
+{% block title %}Extraction logs — Aether Finance{% endblock %}
+{% block content %}
+<section class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">Extraction logs</h1>
+    <p class="mt-2 max-w-2xl font-body-md text-body-md text-on-surface-variant">
+      Pipeline events from Ollama, file prep, audits, and worker tasks. Use this to confirm extractions are running end-to-end.
+    </p>
+  </div>
+  <div class="flex items-center gap-2">
+    <a href="{% url 'documents:settings' %}?tab=management" class="rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-label-sm text-on-surface hover:border-primary hover:text-primary">
+      Back to settings
+    </a>
+    {% if filter_document_pk %}
+    <a href="{% url 'documents:extraction_logs' %}" class="rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-label-sm text-on-surface hover:border-primary hover:text-primary">
+      Clear filter
+    </a>
+    {% endif %}
+  </div>
+</section>
+
+{% if filter_document_pk %}
+<p class="mb-4 font-label-sm text-label-sm text-on-surface-variant">
+  Filtered to document ID <span class="font-mono text-primary">{{ filter_document_pk }}</span>
+  · <a href="{% url 'documents:document_activity' filter_document_pk %}" class="text-primary hover:underline">Activity</a>
+</p>
+{% endif %}
+
+<div class="overflow-hidden rounded border border-outline-variant bg-surface-container-low">
+  <table class="w-full border-collapse text-left">
+    <thead>
+      <tr class="border-b border-surface-container-highest bg-surface-container/50">
+        <th class="px-3 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">When</th>
+        <th class="px-3 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Doc</th>
+        <th class="px-3 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Level</th>
+        <th class="px-3 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Event</th>
+        <th class="px-3 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Message</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-surface-container-highest font-body-md text-body-md text-on-surface">
+      {% for log in logs %}
+      <tr class="align-top transition-colors hover:bg-surface-container-highest/30">
+        <td class="whitespace-nowrap px-3 py-3 text-on-surface-variant">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+        <td class="px-3 py-3">
+          <a href="{% url 'documents:extraction_logs' %}?document={{ log.document_id }}" class="font-mono text-[13px] text-primary hover:underline">TX-{{ log.document_id }}</a>
+          <div class="max-w-[140px] truncate text-[11px] text-on-surface-variant" title="{{ log.document.original_filename|default:'' }}">{{ log.document.original_filename|default:"—" }}</div>
+        </td>
+        <td class="px-3 py-3">
+          {% if log.level == "error" %}
+          <span class="rounded border border-error/40 bg-error/10 px-2 py-0.5 font-label-sm text-error">error</span>
+          {% elif log.level == "warning" %}
+          <span class="rounded border border-secondary/40 bg-secondary/10 px-2 py-0.5 font-label-sm text-secondary">warn</span>
+          {% else %}
+          <span class="rounded border border-outline-variant px-2 py-0.5 font-label-sm text-on-surface-variant">info</span>
+          {% endif %}
+        </td>
+        <td class="px-3 py-3 font-mono text-[12px] text-on-surface-variant">{{ log.event|default:"—" }}</td>
+        <td class="px-3 py-3">
+          <div class="max-w-xl">{{ log.message }}</div>
+          {% if log.details %}
+          <details class="mt-1">
+            <summary class="cursor-pointer font-label-sm text-label-sm text-primary">Details</summary>
+            <pre class="mt-2 max-h-48 overflow-auto rounded border border-outline-variant bg-surface-container-lowest p-2 font-mono text-[11px] text-on-surface-variant">{{ log.details|json_pretty }}</pre>
+          </details>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="5" class="px-4 py-12 text-center text-on-surface-variant">No pipeline logs yet. Upload a document and run the worker — events appear as extraction runs.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-6 flex justify-center gap-2 font-label-sm text-label-sm">
+  {% if page_obj.has_previous %}
+  <a class="text-primary hover:underline" href="?page={{ page_obj.previous_page_number }}{% if filter_document_pk %}&document={{ filter_document_pk }}{% endif %}">Previous</a>
+  {% endif %}
+  <span class="text-on-surface-variant">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+  <a class="text-primary hover:underline" href="?page={{ page_obj.next_page_number }}{% if filter_document_pk %}&document={{ filter_document_pk }}{% endif %}">Next</a>
+  {% endif %}
+</nav>
+{% endif %}
+{% endblock %}

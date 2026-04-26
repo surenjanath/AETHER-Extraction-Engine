@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}AI Runtime Logs — Aether Finance{% endblock %}
+{% block content %}
+<section class="mb-6 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="mb-2 font-headline-lg text-headline-lg text-on-surface">AI Runtime Logs</h1>
+    <p class="max-w-3xl font-body-md text-body-md text-on-surface-variant">
+      Runtime events from Ollama integration for text and vision/OCR requests.
+    </p>
+  </div>
+  <a href="{% url 'documents:settings' %}?tab=management" class="rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-label-sm text-on-surface hover:border-primary hover:text-primary">
+    Back to settings
+  </a>
+</section>
+
+<form method="get" class="mb-5 grid max-w-3xl gap-4 rounded-lg border border-[#262626] bg-[#1A1A1A] p-4 sm:grid-cols-3">
+  <div>
+    <label for="role" class="mb-1 block text-xs text-on-surface-variant">Role</label>
+    <select id="role" name="role" class="w-full rounded-DEFAULT border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface">
+      <option value="" {% if not filter_role %}selected{% endif %}>All</option>
+      <option value="text" {% if filter_role == "text" %}selected{% endif %}>Text</option>
+      <option value="vision" {% if filter_role == "vision" %}selected{% endif %}>Vision</option>
+      <option value="ocr" {% if filter_role == "ocr" %}selected{% endif %}>OCR</option>
+    </select>
+  </div>
+  <div>
+    <label for="level" class="mb-1 block text-xs text-on-surface-variant">Level</label>
+    <select id="level" name="level" class="w-full rounded-DEFAULT border border-outline-variant bg-surface px-3 py-2 text-sm text-on-surface">
+      <option value="" {% if not filter_level %}selected{% endif %}>All</option>
+      <option value="info" {% if filter_level == "info" %}selected{% endif %}>Info</option>
+      <option value="warning" {% if filter_level == "warning" %}selected{% endif %}>Warning</option>
+      <option value="error" {% if filter_level == "error" %}selected{% endif %}>Error</option>
+    </select>
+  </div>
+  <div class="flex items-end gap-2">
+    <button type="submit" class="inline-flex items-center rounded-DEFAULT bg-primary px-4 py-2 text-sm text-on-primary">Filter</button>
+    <a href="{% url 'documents:ai_runtime_logs' %}" class="inline-flex items-center rounded-DEFAULT border border-outline-variant px-4 py-2 text-sm text-on-surface">Reset</a>
+  </div>
+</form>
+
+<div class="overflow-hidden rounded-lg border border-[#262626] bg-[#1A1A1A]">
+  <table class="w-full table-auto border-collapse text-sm">
+    <thead class="border-b border-[#262626] bg-surface-container-low">
+      <tr class="text-left text-on-surface-variant">
+        <th class="px-4 py-3 font-medium">Time</th>
+        <th class="px-4 py-3 font-medium">Role</th>
+        <th class="px-4 py-3 font-medium">Level</th>
+        <th class="px-4 py-3 font-medium">Event</th>
+        <th class="px-4 py-3 font-medium">Model</th>
+        <th class="px-4 py-3 font-medium">Latency</th>
+        <th class="px-4 py-3 font-medium">Message</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for log in logs %}
+      <tr class="border-b border-[#262626]/70 align-top">
+        <td class="px-4 py-3 text-on-surface-variant">{{ log.created_at }}</td>
+        <td class="px-4 py-3 text-on-surface">{{ log.role }}</td>
+        <td class="px-4 py-3">
+          {% if log.level == "error" %}
+          <span class="rounded-full border border-error/40 bg-error/10 px-2 py-0.5 text-xs text-error">error</span>
+          {% elif log.level == "warning" %}
+          <span class="rounded-full border border-secondary/40 bg-secondary/10 px-2 py-0.5 text-xs text-secondary">warning</span>
+          {% else %}
+          <span class="rounded-full border border-outline-variant px-2 py-0.5 text-xs text-on-surface-variant">info</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 font-mono text-xs text-on-surface">{{ log.event }}</td>
+        <td class="px-4 py-3 font-mono text-xs text-on-surface-variant">{{ log.model|default:"—" }}</td>
+        <td class="px-4 py-3 text-on-surface-variant">{% if log.latency_ms %}{{ log.latency_ms }} ms{% else %}—{% endif %}</td>
+        <td class="px-4 py-3 text-on-surface-variant">{{ log.message|default:"—" }}</td>
+      </tr>
+      {% empty %}
+      <tr>
+        <td colspan="7" class="px-4 py-6 text-center text-on-surface-variant">No runtime logs yet.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+<div class="mt-4 flex items-center justify-between text-sm text-on-surface-variant">
+  <div>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+  <div class="flex gap-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if filter_role %}&role={{ filter_role }}{% endif %}{% if filter_level %}&level={{ filter_level }}{% endif %}" class="rounded border border-outline-variant px-3 py-1">Previous</a>
+    {% endif %}
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if filter_role %}&role={{ filter_role }}{% endif %}{% if filter_level %}&level={{ filter_level }}{% endif %}" class="rounded border border-outline-variant px-3 py-1">Next</a>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

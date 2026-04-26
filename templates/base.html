@@ -1,0 +1,37 @@
+{% load static %}
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+  {% include "documents/includes/aether_head.html" %}
+  <title>{% block title %}Aether Finance{% endblock %}</title>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-surface-container-lowest font-body-md text-body-md text-on-surface antialiased {% block body_class %}{% endblock %}">
+<a href="#main-content" class="skip-link">Skip to main content</a>
+{% if user.is_authenticated %}
+<div class="flex min-h-screen">
+  {% include "documents/includes/sidebar.html" %}
+  <div class="ml-sidebar-width flex min-h-screen flex-1 flex-col">
+    {% include "documents/includes/topbar.html" %}
+    <main id="main-content" tabindex="-1" class="flex-1 overflow-y-auto p-8 outline-none">
+{% else %}
+<div id="main-content" tabindex="-1" class="flex min-h-screen flex-col items-center justify-center bg-surface-container-lowest p-6 outline-none">
+{% endif %}
+      {% if messages %}
+      <ul class="django-messages {% if not user.is_authenticated %}mb-4 w-full max-w-md{% endif %}">
+        {% for m in messages %}
+        <li class="{{ m.tags }}">{{ m }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% block content %}{% endblock %}
+{% if user.is_authenticated %}
+    </main>
+  </div>
+</div>
+{% else %}
+</div>
+{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

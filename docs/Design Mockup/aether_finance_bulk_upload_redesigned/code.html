@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Aether Finance - Bulk Upload</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-lowest": "#0e0e0e",
+                    "surface-tint": "#c6c6c7",
+                    "on-tertiary": "#2f3131",
+                    "on-error-container": "#ffdad6",
+                    "surface": "#131313",
+                    "on-tertiary-fixed-variant": "#454747",
+                    "surface-container-low": "#1c1b1b",
+                    "surface-container-highest": "#353534",
+                    "secondary-fixed-dim": "#c6c6cf",
+                    "primary": "#ffffff",
+                    "surface-bright": "#393939",
+                    "on-surface-variant": "#c4c7c8",
+                    "on-primary": "#2f3131",
+                    "on-primary-container": "#636565",
+                    "background": "#131313",
+                    "on-primary-fixed": "#1a1c1c",
+                    "surface-container": "#201f1f",
+                    "error": "#ffb4ab",
+                    "on-surface": "#e5e2e1",
+                    "tertiary-container": "#e2e2e2",
+                    "error-container": "#93000a",
+                    "on-tertiary-container": "#636565",
+                    "primary-container": "#e2e2e2",
+                    "on-error": "#690005",
+                    "inverse-surface": "#e5e2e1",
+                    "inverse-primary": "#5d5f5f",
+                    "primary-fixed": "#e2e2e2",
+                    "tertiary-fixed-dim": "#c6c6c7",
+                    "outline-variant": "#444748",
+                    "primary-fixed-dim": "#c6c6c7",
+                    "on-secondary-fixed-variant": "#45464e",
+                    "tertiary": "#ffffff",
+                    "on-secondary": "#2f3037",
+                    "on-primary-fixed-variant": "#454747",
+                    "inverse-on-surface": "#313030",
+                    "on-secondary-fixed": "#1a1b22",
+                    "on-tertiary-fixed": "#1a1c1c",
+                    "on-background": "#e5e2e1",
+                    "surface-container-high": "#2a2a2a",
+                    "secondary": "#c6c6cf",
+                    "secondary-fixed": "#e2e1eb",
+                    "on-secondary-container": "#b4b4bd",
+                    "surface-variant": "#353534",
+                    "tertiary-fixed": "#e2e2e2",
+                    "surface-dim": "#131313",
+                    "outline": "#8e9192",
+                    "secondary-container": "#45464e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.125rem",
+                    "lg": "0.25rem",
+                    "xl": "0.5rem",
+                    "full": "0.75rem"
+            },
+            "spacing": {
+                    "sm": "16px",
+                    "xl": "64px",
+                    "lg": "40px",
+                    "xs": "8px",
+                    "md": "24px",
+                    "base": "4px",
+                    "sidebar-width": "260px",
+                    "inspector-width": "320px"
+            },
+            "fontFamily": {
+                    "body-md": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Noto Serif"],
+                    "headline-lg": ["Noto Serif"]
+            },
+            "fontSize": {
+                    "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                    "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                    "body-lg": ["16px", { "lineHeight": "1.6", "letterSpacing": "0", "fontWeight": "400" }],
+                    "headline-md": ["24px", { "lineHeight": "1.3", "fontWeight": "500" }],
+                    "headline-lg": ["36px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "500" }]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Minimal custom CSS to handle specific requirements not easily done inline */
+        input[type="search"]::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+        }
+    </style>
+</head>
+<body class="bg-surface-container-lowest text-on-surface antialiased flex h-screen overflow-hidden font-body-md text-body-md">
+<!-- SideNavBar (JSON Component) -->
+<nav class="bg-[#1A1A1A] dark:bg-[#1A1A1A] text-neutral-200 dark:text-neutral-200 font-serif text-sm antialiased docked left-0 h-screen w-64 border-r border-neutral-800 border-r border-[#262626] flat no shadows tonal-layering ease-in-out duration-300 fixed left-0 top-0 h-full flex flex-col pt-8 pb-4 z-50">
+<div class="px-6 mb-8">
+<h1 class="font-serif text-xl italic text-neutral-50 tracking-widest">Aether</h1>
+<p class="text-neutral-500 font-label-sm text-label-sm mt-1">Extraction Engine</p>
+</div>
+<div class="flex flex-col gap-1 px-2">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 text-neutral-500 px-4 py-2 hover:bg-neutral-800/50 hover:text-neutral-200 hover:bg-neutral-800/30 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<!-- Bulk Upload (ACTIVE) -->
+<a class="flex items-center gap-3 bg-neutral-800 text-neutral-50 rounded-sm px-4 py-2 border-l-2 border-neutral-50 hover:text-neutral-200 hover:bg-neutral-800/30 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="cloud_upload">cloud_upload</span>
+<span>Bulk Upload</span>
+</a>
+<!-- HITL Review -->
+<a class="flex items-center gap-3 text-neutral-500 px-4 py-2 hover:bg-neutral-800/50 hover:text-neutral-200 hover:bg-neutral-800/30 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="verified">verified</span>
+<span>HITL Review</span>
+</a>
+<!-- History -->
+<a class="flex items-center gap-3 text-neutral-500 px-4 py-2 hover:bg-neutral-800/50 hover:text-neutral-200 hover:bg-neutral-800/30 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span>History</span>
+</a>
+<!-- Categories -->
+<a class="flex items-center gap-3 text-neutral-500 px-4 py-2 hover:bg-neutral-800/50 hover:text-neutral-200 hover:bg-neutral-800/30 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span>Categories</span>
+</a>
+</div>
+<div class="mt-auto px-6 mb-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-high border border-outline-variant overflow-hidden flex items-center justify-center">
+<img alt="Aether Logo" class="w-full h-full object-cover" data-alt="Minimalist abstract dark geometric logo on dark background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBO7jSFul9Md8BA2P_9X1toJCHLoTuJ7LbpbF4wAzV_aPcYvfPT6y94t-t63vl90jadEkjg27Cw3oPagg4cIwvCTjQFnGQX1-dlm45Hy5fF8kfojxpmgxsvnCvPnZKk-orInHkvJBWqx9P4yGcB-kAMDTuXfoDZlCNKu4cMRDui6UfcpLq6HpHYOcu3pqw57Sh-0TvUJBcv-cbF2bB2Hn-tC2IyI6DYoRwT6e_qz3Qb-9eAzAIx29YmakXonm9q7_1gfAxWh2_CElE"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Area -->
+<div class="flex-1 ml-[256px] flex flex-col h-screen relative bg-surface-container-lowest overflow-hidden">
+<!-- TopAppBar (JSON Component) - Modified structural class slightly to fit right pane relative layout -->
+<header class="bg-[#0D0D0D] dark:bg-[#0D0D0D] text-neutral-100 dark:text-neutral-50 font-serif text-sm tracking-tight text-neutral-300 docked full-width top border-b border-neutral-800 border-b border-[#262626] flat no shadows flex justify-between items-center h-16 px-6 w-full shrink-0">
+<div class="flex items-center gap-md">
+<h2 class="font-serif text-lg font-bold text-neutral-50 scale-100 active:scale-95 transition-transform">Aether Finance</h2>
+</div>
+<!-- Search Bar (on_left implicitly handled by layout flow) -->
+<div class="flex-1 max-w-md mx-md">
+<div class="relative flex items-center w-full h-10 rounded-DEFAULT bg-surface-container focus-within:bg-surface-container-high border border-transparent focus-within:border-outline-variant transition-colors duration-200">
+<span class="material-symbols-outlined absolute left-3 text-on-surface-variant pointer-events-none" data-icon="search">search</span>
+<input class="w-full h-full pl-10 pr-4 bg-transparent border-none text-body-md font-body-md text-on-surface placeholder:text-on-surface-variant focus:ring-0 rounded-DEFAULT" placeholder="Search institutional corpus..." type="search"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-neutral-500 hover:text-neutral-50 transition-colors duration-200 scale-100 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-neutral-500 hover:text-neutral-50 transition-colors duration-200 scale-100 active:scale-95 transition-transform">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full border border-neutral-800 overflow-hidden ml-2">
+<img alt="User avatar" class="w-full h-full object-cover" data-alt="Monochrome professional headshot of a user in low key lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAwvvkI0P5djpNHhnD1jNk0SZPTtki6J5IW8oQyemfgHspv7G2HFvFncv1xyqHEX-Caat9fqy-bFIQ-1d1yLXZZ627N6UmBGfAxjXYOhq7xEqGTPPlCooT1AXwJ5ad3BxaO4j7uBOWH7waMc62JB-CqwdXfUVYmskAa7CzjvLrd46hobryC0XctU70NNncGKon_HH-LLhkaUTJQFjigXMDpzf7AeglLo9xlMMOnSKsYLw4xcSi56SIph8MIdzNp0d71lGRiCGNznFA"/>
+</div>
+</div>
+</header>
+<!-- Canvas Area -->
+<main class="flex-1 overflow-y-auto flex flex-col p-xl gap-xl">
+<div class="flex flex-col gap-sm">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Asset Ingestion</h2>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Securely upload institutional documents for entity extraction and structural analysis. The engine automatically classifies and routes files based on internal schemas.</p>
+</div>
+<!-- Drop Zone -->
+<section class="border-2 border-dashed border-outline-variant rounded-xl bg-surface-container-low p-xl flex flex-col items-center justify-center text-center transition-colors hover:bg-surface-container hover:border-outline group cursor-pointer min-h-[300px]">
+<div class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mb-md group-hover:scale-105 transition-transform duration-300">
+<span class="material-symbols-outlined text-outline text-[32px]" data-icon="cloud_upload" style="font-variation-settings: 'wght' 200;">cloud_upload</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-on-surface mb-xs">Drop institutional assets here</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-md">Supported formats: PDF, DOCX, CSV. Max size: 50MB per file.</p>
+<button class="border border-outline-variant text-on-surface bg-surface-container-low hover:bg-surface-container px-md py-sm rounded-DEFAULT font-label-sm text-label-sm uppercase tracking-wider transition-colors focus:outline-none focus:ring-1 focus:ring-outline">
+                    Select Files
+                </button>
+</section>
+<!-- Ingestion Queue -->
+<section class="flex flex-col gap-md">
+<div class="flex justify-between items-end border-b border-surface-container-high pb-xs">
+<h3 class="font-body-lg text-body-lg text-on-surface">Ingestion Queue</h3>
+<span class="font-label-sm text-label-sm text-on-surface-variant">3 Active Tasks</span>
+</div>
+<div class="bg-surface-container-low border border-[#262626] rounded-DEFAULT overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead class="bg-surface-container-highest border-b border-[#262626]">
+<tr>
+<th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant font-medium">File Name</th>
+<th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant font-medium w-48">Status</th>
+<th class="py-sm px-md font-label-sm text-label-sm text-on-surface-variant font-medium text-right w-32">Time</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-[#262626]">
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-sm px-md font-body-md text-body-md text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant" data-icon="description">description</span>
+                                    Q3_Earnings_Report_AcmeCorp.pdf
+                                </td>
+<td class="py-sm px-md">
+<span class="inline-flex items-center gap-1.5 bg-primary-fixed-dim text-on-primary-fixed px-2 py-1 rounded-DEFAULT font-label-sm text-label-sm">
+<span class="w-1.5 h-1.5 rounded-full bg-on-primary-fixed animate-pulse"></span>
+                                        Processing
+                                    </span>
+</td>
+<td class="py-sm px-md font-body-md text-body-md text-on-surface-variant text-right">00:12</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-sm px-md font-body-md text-body-md text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant" data-icon="table">table</span>
+                                    Historical_Trading_Data_2023.csv
+                                </td>
+<td class="py-sm px-md">
+<span class="inline-flex items-center gap-1.5 bg-tertiary-fixed-dim text-on-tertiary-fixed px-2 py-1 rounded-DEFAULT font-label-sm text-label-sm">
+<span class="material-symbols-outlined text-[14px]" data-icon="memory">memory</span>
+                                        Extracting Entities
+                                    </span>
+</td>
+<td class="py-sm px-md font-body-md text-body-md text-on-surface-variant text-right">01:45</td>
+</tr>
+<tr class="hover:bg-surface-container transition-colors">
+<td class="py-sm px-md font-body-md text-body-md text-on-surface flex items-center gap-3">
+<span class="material-symbols-outlined text-outline-variant" data-icon="description">description</span>
+                                    Merger_Agreement_Draft_V2.docx
+                                </td>
+<td class="py-sm px-md">
+<span class="inline-flex items-center gap-1.5 bg-surface-container-high text-on-surface-variant px-2 py-1 rounded-DEFAULT font-label-sm text-label-sm border border-outline-variant">
+<span class="material-symbols-outlined text-[14px]" data-icon="schedule">schedule</span>
+                                        Waiting in Queue
+                                    </span>
+</td>
+<td class="py-sm px-md font-body-md text-body-md text-on-surface-variant text-right">--:--</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Spacer to push insight banner to bottom if needed, or just let it sit in flow -->
+<div class="flex-1 min-h-[40px]"></div>
+<!-- Engine Insight Banner -->
+<div class="mt-auto bg-surface-container-highest border border-[#262626] rounded-DEFAULT p-md flex items-start sm:items-center gap-md">
+<div class="w-8 h-8 rounded bg-surface-container border border-outline-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="analytics" style="font-variation-settings: 'wght' 300;">analytics</span>
+</div>
+<div class="flex-1">
+<p class="font-body-md text-body-md text-on-surface-variant">
+<span class="text-on-surface font-medium mr-1">Engine Insight:</span> Processing load is currently optimal. P95 extraction latency is 1.2s. Neural models are operating efficiently.
+                    </p>
+</div>
+<button class="text-on-surface-variant hover:text-on-surface p-1 transition-colors shrink-0">
+<span class="material-symbols-outlined" data-icon="close">close</span>
+</button>
+</div>
+</main>
+</div>
+</body></html>

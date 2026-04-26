@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}HITL Review — Aether Finance{% endblock %}
+{% block content %}
+<div class="mb-8 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">Audit queue</h1>
+    <p class="mt-2 font-body-md text-body-md text-on-surface-variant">Documents flagged for human review.</p>
+  </div>
+</div>
+
+<form id="bulk-verify-form" method="post" action="{% url 'documents:bulk_verify_audit' %}" class="mb-4 flex flex-wrap items-center gap-3">
+  {% csrf_token %}
+  <button type="submit" class="rounded-DEFAULT border border-outline-variant bg-surface-container-high px-4 py-2 font-label-sm text-label-sm text-on-surface transition-colors hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">Verify selected (math must pass)</button>
+  <span class="text-xs text-on-surface-variant">Only rows with passing deterministic checks are marked verified.</span>
+</form>
+<form id="bulk-action-form" method="post" action="{% url 'documents:bulk_audit_action' %}" class="mb-4 flex flex-wrap items-center gap-3">
+  {% csrf_token %}
+  <input type="hidden" name="doc_ids" id="bulk-doc-ids" value="">
+  <select name="action" class="rounded-DEFAULT border border-outline-variant bg-surface-container-high px-3 py-2 text-sm text-on-surface">
+    <option value="verify">Verify</option>
+    <option value="requeue">Requeue</option>
+    <option value="mark_duplicate">Mark duplicate</option>
+    <option value="assign_category">Assign category</option>
+    <option value="archive">Archive</option>
+  </select>
+  <button type="submit" class="rounded-DEFAULT border border-outline-variant bg-surface-container-high px-4 py-2 font-label-sm text-label-sm text-on-surface transition-colors hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">Apply batch action</button>
+  <span class="text-xs text-on-surface-variant">Smart triage is applied: lower confidence + higher amount appear first.</span>
+</form>
+
+<div class="overflow-hidden rounded-lg border border-[#262626] bg-[#1A1A1A]">
+  <table class="w-full text-left font-body-md text-body-md">
+    <thead>
+      <tr class="border-b border-[#262626] font-label-sm text-label-sm text-on-surface-variant">
+        <th class="w-10 px-2 py-3"><span class="sr-only">Select</span></th>
+        <th class="px-4 py-3 font-medium">ID</th>
+        <th class="px-4 py-3 font-medium">File</th>
+        <th class="px-4 py-3 font-medium">Uploaded</th>
+        <th class="px-4 py-3 font-medium">Confidence</th>
+        <th class="px-4 py-3 font-medium">Vendor</th>
+        <th class="px-4 py-3 text-right font-medium"></th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-[#262626]">
+      {% for d in documents %}
+      <tr class="transition-colors hover:bg-surface-container-highest/20">
+        <td class="px-2 py-4 text-center">
+          <input type="checkbox" name="doc_id" value="{{ d.pk }}" form="bulk-verify-form" class="h-4 w-4 rounded border-outline-variant bg-surface-container-low text-primary focus:ring-primary" aria-label="Select document {{ d.pk }}">
+        </td>
+        <td class="px-4 py-4 font-mono text-sm text-on-surface-variant">{{ d.pk }}</td>
+        <td class="px-4 py-4 text-primary">{{ d.original_filename|default:"—" }}</td>
+        <td class="px-4 py-4 text-on-surface-variant">{{ d.upload_date|date:"Y-m-d H:i" }}</td>
+        <td class="px-4 py-4 text-on-surface-variant">{{ d.confidence_score|default:"—" }}</td>
+        <td class="px-4 py-4">{% if d.extracted %}{{ d.extracted.vendor_name|default:"—" }}{% else %}—{% endif %}{% if d.is_duplicate %}<span class="ml-2 rounded border border-amber-500/50 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-300">duplicate</span>{% endif %}</td>
+        <td class="px-4 py-4 text-right">
+          <a href="{% url 'documents:review' d.pk %}" class="inline-flex items-center rounded-DEFAULT border border-outline-variant px-3 py-1.5 font-label-sm text-label-sm text-on-surface transition-colors hover:border-outline hover:text-primary">Review</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-4 py-10 text-center text-on-surface-variant">No documents need audit.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if is_paginated %}
+<nav class="mt-4 font-label-sm text-on-surface-variant">Page {{ page_obj.number }} of {{ paginator.num_pages }}</nav>
+{% endif %}
+<script>
+(function () {
+  const checkboxes = Array.from(document.querySelectorAll('input[name="doc_id"]'));
+  const hidden = document.getElementById('bulk-doc-ids');
+  function sync() {
+    const ids = checkboxes.filter((cb) => cb.checked).map((cb) => cb.value);
+    if (hidden) hidden.value = ids.join(',');
+  }
+  checkboxes.forEach((cb) => cb.addEventListener('change', sync));
+  sync();
+})();
+</script>
+{% endblock %}

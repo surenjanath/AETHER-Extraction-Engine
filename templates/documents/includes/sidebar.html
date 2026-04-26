@@ -1,0 +1,46 @@
+{% with url_name=request.resolver_match.url_name %}
+<nav class="fixed left-0 top-0 z-50 flex h-full w-sidebar-width shrink-0 flex-col border-r border-[#262626] bg-[#1A1A1A] pb-4 pt-8 text-sm text-neutral-200 antialiased">
+  <div class="mb-10 px-6">
+    {% include "documents/includes/brand_logo.html" %}
+  </div>
+  <div class="flex flex-1 flex-col gap-1 px-4">
+    <a href="{% url 'documents:dashboard' %}" class="flex items-center gap-3 rounded-sm px-4 py-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary {% if url_name == 'dashboard' %}border-l-2 border-neutral-50 bg-neutral-800 text-neutral-50{% else %}text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-200{% endif %}">
+      <span class="material-symbols-outlined text-[20px]">dashboard</span>
+      Dashboard
+    </a>
+    <a href="{% url 'documents:bulk_upload' %}" class="flex items-center gap-3 rounded-sm px-4 py-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary {% if url_name == 'bulk_upload' %}border-l-2 border-neutral-50 bg-neutral-800 text-neutral-50{% else %}text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-200{% endif %}">
+      <span class="material-symbols-outlined text-[20px]">cloud_upload</span>
+      Bulk Upload
+    </a>
+    <a href="{% url 'documents:audit_queue' %}" class="flex items-center gap-3 rounded-sm px-4 py-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary {% if url_name == 'audit_queue' %}border-l-2 border-neutral-50 bg-neutral-800 text-neutral-50{% else %}text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-200{% endif %}">
+      <span class="material-symbols-outlined text-[20px]">verified</span>
+      HITL Review
+    </a>
+    <a href="{% url 'documents:history' %}" class="flex items-center gap-3 rounded-sm px-4 py-2 transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary {% if url_name == 'history' %}border-l-2 border-neutral-50 bg-neutral-800 text-neutral-50{% else %}text-neutral-500 hover:bg-neutral-800/50 hover:text-neutral-200{% endif %}">
+      <span class="material-symbols-outlined text-[20px]">history</span>
+      History
+    </a>
+  </div>
+  <div class="mt-auto space-y-1 border-t border-[#262626] px-4 pt-4">
+    <a href="{% url 'documents:export' %}" class="flex items-center gap-3 rounded-sm px-4 py-2 text-neutral-500 transition-all hover:bg-neutral-800/50 hover:text-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary {% if url_name == 'export' %}bg-neutral-800/40 text-neutral-200{% endif %}">
+      <span class="material-symbols-outlined text-[18px]">download</span>
+      Export
+    </a>
+    <a href="{% url 'documents:reports' %}" class="flex items-center gap-3 rounded-sm px-4 py-2 text-neutral-500 transition-all hover:bg-neutral-800/50 hover:text-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary {% if url_name == 'reports' %}bg-neutral-800/40 text-neutral-200{% endif %}">
+      <span class="material-symbols-outlined text-[18px]">bar_chart</span>
+      Reports
+    </a>
+    <a href="{% url 'documents:settings' %}" class="flex items-center gap-3 rounded-sm px-4 py-2 text-neutral-500 transition-all hover:bg-neutral-800/50 hover:text-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary {% if url_name == 'settings' %}bg-neutral-800/40 text-neutral-200{% endif %}">
+      <span class="material-symbols-outlined text-[18px]">settings</span>
+      Settings
+    </a>
+    <form method="post" action="{% url 'logout' %}" class="px-4 py-2">
+      {% csrf_token %}
+      <button type="submit" class="flex w-full items-center gap-3 rounded-sm px-0 py-1 text-left text-neutral-500 transition-all hover:text-neutral-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary">
+        <span class="material-symbols-outlined text-[18px]">logout</span>
+        Sign out
+      </button>
+    </form>
+  </div>
+</nav>
+{% endwith %}

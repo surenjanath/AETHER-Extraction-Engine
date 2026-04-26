@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Settings — Aether Finance{% endblock %}
+{% block content %}
+<h1 class="mb-2 font-headline-lg text-headline-lg text-on-surface">Settings</h1>
+<p class="mb-6 max-w-3xl font-body-md text-body-md text-on-surface-variant">Configuration is grouped into tabs. CrewAI controls are now in a dedicated <strong>advanced</strong> tab so agent behavior is easier to tune.</p>
+
+<form method="post" class="max-w-5xl space-y-4 rounded-lg border border-[#262626] bg-[#1A1A1A] p-6">
+  {% csrf_token %}
+  {% if form.non_field_errors %}
+  <div class="rounded border border-error/40 bg-error/10 p-3 text-sm text-error" role="alert">{{ form.non_field_errors }}</div>
+  {% endif %}
+
+  <datalist id="ollama-model-names"></datalist>
+
+  <div class="flex flex-wrap gap-2 border-b border-[#262626] pb-4">
+    {% for slug, label in settings_tabs %}
+      <a
+        href="{% url 'documents:settings' %}?tab={{ slug }}"
+        class="inline-flex min-h-[38px] items-center rounded-DEFAULT border px-3 py-2 font-label-sm transition-colors {% if active_settings_tab == slug %}border-primary bg-primary text-on-primary{% else %}border-outline-variant text-on-surface hover:border-primary hover:text-primary{% endif %}">
+        {{ label }}
+      </a>
+    {% endfor %}
+  </div>
+
+  {% include active_settings_partial %}
+
+  {% if active_settings_tab == "general" or active_settings_tab == "models" or active_settings_tab == "crewai" %}
+  <div class="pt-2">
+    <button type="submit" class="inline-flex items-center gap-2 rounded-DEFAULT bg-primary px-4 py-2 font-label-sm text-on-primary">Save settings</button>
+  </div>
+  {% endif %}
+</form>
+
+{% if user.is_staff %}
+<p class="mt-6">
+  <a href="{% url 'admin:documents_systemsettings_change' 1 %}" class="inline-flex items-center gap-2 rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-on-surface transition-colors hover:text-primary">Open system settings in admin</a>
+  <span class="ml-2 text-sm text-on-surface-variant">(advanced)</span>
+</p>
+{% endif %}
+
+<script>
+(function () {
+  function getCookie(name) {
+    const m = document.cookie.match("(^|;)\\s*" + name + "\\s*=\\s*([^;]+)");
+    return m ? decodeURIComponent(m[2]) : "";
+  }
+  const datalist = document.getElementById("ollama-model-names");
+  const baseInput = document.getElementById("{{ form.ollama_base_url.id_for_label }}");
+  const textInput = document.getElementById("{{ form.ollama_text_model.id_for_label }}");
+  const ocrInput = document.getElementById("{{ form.ollama_ocr_model.id_for_label }}");
+
+  async function loadModelNames() {
+    if (!datalist || !baseInput) return;
+    const base = encodeURIComponent(baseInput.value.trim() || "");
+    try {
+      const r = await fetch("/api/ollama/tags/?base_url=" + base, { credentials: "same-origin" });
+      const j = await r.json();
+      datalist.innerHTML = "";
+      (j.models || []).forEach(function (m) {
+        if (m.name) {
+          const opt = document.createElement("option");
+          opt.value = m.name;
+          datalist.appendChild(opt);
+        }
+      });
+    } catch (e) {
+      console.warn("Could not load Ollama model list", e);
+    }
+  }
+
+  async function prepareModel(role, name, pull) {
+    const statusEl = document.getElementById("prepare-status-" + role);
+    if (!name || !name.trim()) {
+      if (statusEl) statusEl.textContent = "";
+      return;
+    }
+    if (statusEl) statusEl.textContent = "Inspecting…";
+    try {
+      const roleBase = baseInput ? baseInput.value.trim() : "";
+      const r = await fetch("/api/ollama/prepare-model/", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCookie("csrftoken"),
+        },
+        body: JSON.stringify({ role: role, name: name.trim(), pull: pull, base_url: roleBase }),
+      });
+      const j = await r.json().catch(function () { return {}; });
+      if (!r.ok) {
+        if (statusEl) statusEl.textContent = j.detail || r.statusText || "Failed";
+        return;
+      }
+      if (statusEl) statusEl.textContent = j.pull_status ? "Done: " + j.pull_status : "Done.";
+    } catch (e) {
+      if (statusEl) statusEl.textContent = String(e);
+    }
+  }
+
+  let textTimer = null;
+  let ocrTimer = null;
+  if (textInput) {
+    textInput.addEventListener("change", function () {
+      clearTimeout(textTimer);
+      textTimer = setTimeout(function () { prepareModel("text", textInput.value, true); }, 200);
+    });
+  }
+  if (ocrInput) {
+    ocrInput.addEventListener("change", function () {
+      clearTimeout(ocrTimer);
+      ocrTimer = setTimeout(function () { prepareModel("vision", ocrInput.value, true); }, 200);
+    });
+  }
+  if (baseInput) {
+    baseInput.addEventListener("change", loadModelNames);
+  }
+  loadModelNames();
+})();
+</script>
+{% endblock %}

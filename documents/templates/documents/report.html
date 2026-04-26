@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Reports — Aether Finance{% endblock %}
+{% block content %}
+<h1 class="mb-2 font-headline-lg text-headline-lg text-on-surface">Expenses by category</h1>
+<p class="mb-6 font-body-md text-body-md text-on-surface-variant">Verified documents only. Adjust date range and apply.</p>
+
+<form method="get" class="mb-6 flex flex-wrap items-end gap-3 rounded border border-outline-variant bg-surface-container-low p-4">
+  <div><label class="mb-1 block font-label-sm text-on-surface-variant">From</label>{{ filter_form.date_from }}</div>
+  <div><label class="mb-1 block font-label-sm text-on-surface-variant">To</label>{{ filter_form.date_to }}</div>
+  <button type="submit" class="rounded-DEFAULT border border-outline-variant bg-surface px-4 py-2 font-label-sm text-on-surface hover:bg-surface-bright">Apply</button>
+</form>
+
+<div class="mb-6 grid grid-cols-1 gap-3 md:grid-cols-3">
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-4">
+    <p class="text-xs text-on-surface-variant">AI pass rate</p>
+    <p class="mt-1 text-lg text-secondary">{{ audit_kpis.ai_pass_rate }}%</p>
+  </div>
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-4">
+    <p class="text-xs text-on-surface-variant">Avg extract latency</p>
+    <p class="mt-1 text-lg text-primary">{{ sla_metrics.avg_extract_seconds }}s</p>
+  </div>
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-4">
+    <p class="text-xs text-on-surface-variant">Queue aging</p>
+    <p class="mt-1 text-lg text-error">{{ sla_metrics.queue_aging_count }}</p>
+  </div>
+</div>
+
+<div class="overflow-hidden rounded-lg border border-[#262626] bg-[#1A1A1A]">
+  <table class="w-full text-left">
+    <thead>
+      <tr class="border-b border-[#262626] font-label-sm text-label-sm text-on-surface-variant">
+        <th class="px-4 py-3">Category</th>
+        <th class="px-4 py-3 text-right">Total</th>
+        <th class="px-4 py-3 text-right">Share</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-[#262626] font-body-md">
+      {% for r in rows %}
+      <tr>
+        <td class="px-4 py-3 text-primary">{{ r.name }}</td>
+        <td class="px-4 py-3 text-right font-mono">{{ r.total|default_if_none:"0" }}</td>
+        <td class="px-4 py-3 text-right text-on-surface-variant">{{ r.pct }}%</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="3" class="px-4 py-8 text-center text-on-surface-variant">No verified data for this range.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if chart_rows %}
+<section class="mt-8 rounded-lg border border-[#262626] bg-[#1A1A1A] p-6" aria-label="Category share chart">
+  <h2 class="mb-4 font-headline-md text-[16px] text-primary">Share by category</h2>
+  <div class="space-y-3">
+    {% for r in chart_rows %}
+    <div>
+      <div class="mb-1 flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+        <span>{{ r.name }}</span>
+        <span>{{ r.pct }}%</span>
+      </div>
+      <div class="h-2 w-full overflow-hidden rounded-full bg-surface-container-highest" role="img" aria-label="{{ r.name }} {{ r.pct }} percent">
+        <div class="h-full rounded-full bg-secondary transition-all" style="width: {{ r.bar_width_pct }}%; max-width: 100%;"></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block title %}Sign in — Aether Finance{% endblock %}
+{% block extra_head %}
+<style>
+  @keyframes aether-float-slow {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(16px, -10px, 0) scale(1.03); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  @keyframes aether-float-reverse {
+    0% { transform: translate3d(0, 0, 0) scale(1); }
+    50% { transform: translate3d(-14px, 12px, 0) scale(0.98); }
+    100% { transform: translate3d(0, 0, 0) scale(1); }
+  }
+
+  .aether-bg-orb {
+    filter: blur(8px);
+    animation: aether-float-slow 12s ease-in-out infinite;
+  }
+
+  .aether-bg-orb-reverse {
+    filter: blur(8px);
+    animation: aether-float-reverse 14s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .aether-bg-orb,
+    .aether-bg-orb-reverse {
+      animation: none;
+    }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<div class="relative isolate w-full max-w-6xl">
+  <div class="aether-bg-orb pointer-events-none absolute -left-10 -top-12 h-40 w-40 rounded-full bg-primary/20"></div>
+  <div class="aether-bg-orb-reverse pointer-events-none absolute -bottom-10 -right-8 h-48 w-48 rounded-full bg-indigo-500/20"></div>
+
+<div class="relative w-full max-w-5xl overflow-hidden rounded-2xl border border-outline-variant/60 bg-surface-container shadow-2xl">
+  <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_15%_20%,rgba(95,158,255,0.18),transparent_45%),radial-gradient(circle_at_85%_0%,rgba(132,92,255,0.2),transparent_35%)]"></div>
+  <div class="relative grid md:grid-cols-2">
+    <section class="hidden border-r border-outline-variant/50 bg-surface-container-low p-8 md:flex md:flex-col md:justify-between lg:p-10">
+      <div>
+        <p class="mb-4 inline-flex items-center rounded-full border border-outline-variant bg-surface-container-high px-3 py-1 font-label-sm text-label-sm text-on-surface-variant">
+          Aether Finance Platform
+        </p>
+        <h1 class="mb-4 font-headline-md text-3xl leading-tight text-on-surface">
+          Welcome back
+        </h1>
+        <p class="max-w-sm font-body-md text-base text-on-surface-variant">
+          Sign in to continue reviewing receipts, validating extracted data, and managing your document workflow with confidence.
+        </p>
+      </div>
+      <ul class="space-y-4 pt-8">
+        <li class="rounded-lg border border-outline-variant/60 bg-surface-container p-4">
+          <p class="font-label-sm text-label-sm text-on-surface">Fast extraction reviews</p>
+          <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Move from OCR to verified records in one clean flow.</p>
+        </li>
+        <li class="rounded-lg border border-outline-variant/60 bg-surface-container p-4">
+          <p class="font-label-sm text-label-sm text-on-surface">Safer operations</p>
+          <p class="mt-1 font-body-sm text-body-sm text-on-surface-variant">Role-based access and activity logs protect your process.</p>
+        </li>
+      </ul>
+    </section>
+
+    <section class="p-6 sm:p-8 lg:p-10">
+      <div class="mb-8">
+        {% include "documents/includes/brand_logo.html" %}
+      </div>
+
+      <div class="mb-6">
+        <h2 class="font-headline-md text-2xl text-on-surface">Sign in to your account</h2>
+        <p class="mt-2 font-body-sm text-body-sm text-on-surface-variant">Use your platform credentials to continue.</p>
+      </div>
+
+      <form method="post" class="space-y-5" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+          <ul class="aether-errorlist">{{ form.non_field_errors }}</ul>
+        </div>
+        {% endif %}
+
+        {% for field in form %}
+          {% if field.is_hidden %}
+            {{ field }}
+          {% else %}
+          <div>
+            <label class="mb-2 block font-label-sm text-label-sm text-on-surface" for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {% if field.name == "password" %}
+            <div class="relative">
+              <input
+                type="password"
+                name="{{ field.name }}"
+                id="{{ field.id_for_label }}"
+                value="{{ field.value|default_if_none:'' }}"
+                placeholder="Enter your password"
+                class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3.5 py-2.5 pr-20 font-body-md text-on-surface transition-colors placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                autocomplete="current-password"
+                {% if field.errors %}aria-invalid="true"{% endif %}
+              >
+              <button
+                type="button"
+                id="toggle-password-visibility"
+                aria-controls="{{ field.id_for_label }}"
+                aria-label="Show password"
+                class="absolute right-2 top-1/2 -translate-y-1/2 rounded-md border border-outline-variant px-2.5 py-1 text-xs text-on-surface-variant hover:bg-surface-container-high focus:outline-none focus:ring-2 focus:ring-primary/30"
+              >
+                Show
+              </button>
+            </div>
+            <p id="caps-lock-hint" class="mt-2 hidden text-xs text-amber-300">Caps Lock is on.</p>
+            {% else %}
+            <input
+              type="text"
+              name="{{ field.name }}"
+              id="{{ field.id_for_label }}"
+              value="{{ field.value|default_if_none:'' }}"
+              placeholder="{% if field.name == 'username' %}Enter your username{% else %}Enter {{ field.label|lower }}{% endif %}"
+              class="w-full rounded-lg border border-outline-variant bg-surface-container-low px-3.5 py-2.5 font-body-md text-on-surface transition-colors placeholder:text-on-surface-variant/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+              autocomplete="username"
+              {% if field.errors %}aria-invalid="true"{% endif %}
+            >
+            {% endif %}
+            {% if field.errors %}
+            <div class="mt-2 rounded-md border border-red-500/25 bg-red-500/10 px-2.5 py-2 text-sm text-red-200">
+              {{ field.errors }}
+            </div>
+            {% endif %}
+          </div>
+          {% endif %}
+        {% endfor %}
+
+        <div class="flex items-center justify-between gap-4">
+          <label class="inline-flex items-center gap-2 text-sm text-on-surface-variant">
+            <input type="checkbox" name="remember_me" class="h-4 w-4 rounded border-outline-variant bg-surface-container-low text-primary focus:ring-primary/30">
+            Keep me signed in
+          </label>
+          <span class="text-xs text-on-surface-variant">Secure login</span>
+        </div>
+
+        <button
+          type="submit"
+          class="mt-2 w-full rounded-lg bg-primary py-3 font-label-sm text-label-sm text-on-primary transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-fixed-dim focus:outline-none focus:ring-2 focus:ring-primary/35 focus:ring-offset-2 focus:ring-offset-surface-container"
+        >
+          Sign in
+        </button>
+      </form>
+
+      <p class="mt-5 text-center font-body-sm text-body-sm text-on-surface-variant">
+        Need help accessing your account? Contact your system administrator.
+      </p>
+    </section>
+  </div>
+</div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    const toggleButton = document.getElementById("toggle-password-visibility");
+    const passwordInput = document.getElementById("id_password");
+    const capsLockHint = document.getElementById("caps-lock-hint");
+
+    if (toggleButton && passwordInput) {
+      toggleButton.addEventListener("click", function () {
+        const showing = passwordInput.type === "text";
+        passwordInput.type = showing ? "password" : "text";
+        toggleButton.textContent = showing ? "Show" : "Hide";
+        toggleButton.setAttribute("aria-label", showing ? "Show password" : "Hide password");
+      });
+
+      passwordInput.addEventListener("keyup", function (event) {
+        if (!capsLockHint) return;
+        capsLockHint.classList.toggle("hidden", !event.getModifierState("CapsLock"));
+      });
+    }
+  })();
+</script>
+{% endblock %}

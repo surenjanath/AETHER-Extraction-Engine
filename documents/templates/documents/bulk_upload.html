@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Bulk Upload — Aether Finance{% endblock %}
+{% block content %}
+<div class="mb-6 flex flex-col gap-sm">
+  <h1 class="font-headline-lg text-headline-lg text-on-surface">Asset Ingestion</h1>
+  <p class="max-w-2xl font-body-md text-body-md text-on-surface-variant">Upload receipts and invoices for extraction. Supports PDF, images, and ZIP archives. Processing runs immediately in this app process using Ollama.</p>
+</div>
+
+<section id="dropzone" class="group flex min-h-[300px] cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-outline-variant bg-surface-container-low p-xl text-center transition-colors hover:border-outline hover:bg-surface-container">
+  <div class="mb-md flex h-16 w-16 items-center justify-center rounded-full bg-surface-container transition-transform duration-300 group-hover:scale-105">
+    <span class="material-symbols-outlined text-[32px] text-outline" style="font-variation-settings: 'wght' 200;">cloud_upload</span>
+  </div>
+  <h3 class="mb-xs font-headline-md text-headline-md text-on-surface">Drop files here</h3>
+  <p class="mb-md font-body-md text-body-md text-on-surface-variant">PDF, PNG, JPG, GIF, WebP, or a <strong class="text-on-surface">.zip</strong> of those files (server unpacks each member into its own document). Max size per server config.</p>
+  <input type="file" id="fileInput" multiple accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.zip" class="hidden">
+  <button type="button" id="browseBtn" class="rounded-DEFAULT border border-outline-variant bg-surface-container-low px-md py-sm font-label-sm text-label-sm uppercase tracking-wider text-on-surface transition-colors hover:bg-surface-container focus:outline-none focus:ring-1 focus:ring-outline">Select Files</button>
+  {% csrf_token %}
+  <ul id="uploadFileList" class="mt-4 w-full max-w-lg space-y-1 text-left font-body-md text-sm text-on-surface-variant empty:hidden" aria-live="polite"></ul>
+  <p id="uploadSummary" class="mt-2 font-body-md text-on-surface-variant" aria-live="polite"></p>
+  <p class="mt-1 text-xs text-on-surface-variant">After upload, files transition through pending extraction, audit required, and verified states. Failed files can be re-queued from review/history.</p>
+</section>
+
+<div class="mt-xl rounded-DEFAULT border border-[#262626] bg-surface-container-highest p-md">
+  <div class="flex items-start gap-md">
+    <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-outline-variant bg-surface-container">
+      <span class="material-symbols-outlined text-on-surface-variant" style="font-variation-settings: 'wght' 300;">analytics</span>
+    </div>
+    <p class="flex-1 font-body-md text-body-md text-on-surface-variant">
+      <span class="mr-1 font-medium text-on-surface">Engine Insight:</span>
+      Ensure Ollama is running and models are pulled. Check Settings for model names and endpoint.
+    </p>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+  const dz = document.getElementById('dropzone');
+  const input = document.getElementById('fileInput');
+  const btn = document.getElementById('browseBtn');
+  const listEl = document.getElementById('uploadFileList');
+  const summaryEl = document.getElementById('uploadSummary');
+  const csrf = document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+  const uploadUrl = "{% url 'invoice-list' %}";
+  const reviewUrlTemplate = "{% url 'documents:review' 0 %}";
+
+  function setRowStatus(li, ok, msg) {
+    li.className = ok ? 'text-secondary' : 'text-error';
+    li.textContent = li.dataset.name + ' — ' + msg;
+  }
+
+  function uploadFiles(fileList) {
+    const files = Array.from(fileList);
+    const createdIds = [];
+    listEl.innerHTML = '';
+    summaryEl.textContent = '';
+    files.forEach(function (f) {
+      const li = document.createElement('li');
+      li.dataset.name = f.name;
+      li.textContent = f.name + ' — pending';
+      listEl.appendChild(li);
+    });
+    let idx = 0;
+    function next() {
+      if (idx >= files.length) {
+        summaryEl.textContent = 'Upload complete. Opening review…';
+        if (createdIds.length > 0) {
+          const targetId = createdIds[createdIds.length - 1];
+          window.location.href = reviewUrlTemplate.replace('/0/', '/' + targetId + '/');
+        } else {
+          window.location.href = "{% url 'documents:audit_queue' %}";
+        }
+        return;
+      }
+      const f = files[idx];
+      const li = listEl.children[idx];
+      const fd = new FormData();
+      fd.append('file', f);
+      fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf },
+        credentials: 'same-origin',
+        body: fd,
+      }).then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      }).then(function (payload) {
+        setRowStatus(li, true, 'uploaded and queued');
+        if (payload && payload.id) createdIds.push(payload.id);
+        idx += 1;
+        summaryEl.textContent = 'Uploaded ' + idx + '/' + files.length;
+        next();
+      }).catch(function (e) {
+        setRowStatus(li, false, e.message || 'failed');
+        summaryEl.textContent = 'Stopped after error.';
+      });
+    }
+    summaryEl.textContent = 'Uploading 0/' + files.length;
+    next();
+  }
+
+  btn.addEventListener('click', () => input.click());
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('border-outline', 'bg-surface-container'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('border-outline', 'bg-surface-container'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault();
+    dz.classList.remove('border-outline', 'bg-surface-container');
+    if (e.dataTransfer.files && e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files);
+  });
+  input.addEventListener('change', () => {
+    if (input.files && input.files.length) uploadFiles(input.files);
+  });
+})();
+</script>
+{% endblock %}

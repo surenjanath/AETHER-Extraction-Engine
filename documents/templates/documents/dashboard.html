@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Overview — Aether Finance{% endblock %}
+{% block content %}
+<div class="mb-8 flex items-end justify-between gap-4">
+  <div>
+    <h1 class="mb-1 font-headline-lg text-headline-lg text-primary">Operations Dashboard</h1>
+    <p class="font-body-md text-body-md text-on-surface-variant">Cleaner view of throughput, exceptions, and review workload.</p>
+  </div>
+  <a href="{% url 'documents:bulk_upload' %}" class="flex items-center gap-2 rounded-DEFAULT border border-dashed border-outline-variant px-4 py-2 font-label-sm text-label-sm text-primary transition-colors hover:bg-surface-container-low">
+    <span class="material-symbols-outlined text-[16px]">upload_file</span>
+    Upload Batch
+  </a>
+</div>
+
+<div class="mb-6 flex flex-wrap items-center gap-4 rounded-lg border border-[#262626] bg-[#1A1A1A] px-4 py-3">
+  <span class="font-label-sm text-label-sm text-on-surface-variant">Ollama</span>
+  {% if ollama_health.ok %}
+  <span class="rounded-full border border-secondary/40 bg-secondary/10 px-2.5 py-0.5 font-label-sm text-secondary">Online</span>
+  {% else %}
+  <span class="rounded-full border border-error/40 bg-error/10 px-2.5 py-0.5 font-label-sm text-error">Offline</span>
+  {% endif %}
+  {% if ollama_health.error %}
+  <span class="text-xs text-error" title="{{ ollama_health.error }}">{{ ollama_health.error|truncatechars:48 }}</span>
+  {% endif %}
+  <span class="ml-auto font-mono text-[11px] text-on-surface-variant" id="queue-live" aria-live="polite"></span>
+</div>
+
+<div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+    <p class="text-sm text-on-surface-variant">Processed Today</p>
+    <p class="mt-2 font-headline-lg text-primary">{{ processed_today }}</p>
+    <p class="mt-1 text-xs text-on-surface-variant">All receipts uploaded today</p>
+  </div>
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+    <p class="text-sm text-on-surface-variant">Needs Review</p>
+    <p class="mt-2 font-headline-lg text-error">{{ count_audit }}</p>
+    <p class="mt-1 text-xs text-on-surface-variant">Pending manual audit decisions</p>
+  </div>
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+    <p class="text-sm text-on-surface-variant">Math / Parse Flags</p>
+    <p class="mt-2 font-headline-lg text-primary">{{ math_errors }}</p>
+    <p class="mt-1 text-xs text-on-surface-variant">Documents with extraction anomalies</p>
+  </div>
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-5">
+    <p class="text-sm text-on-surface-variant">Verified</p>
+    <p class="mt-2 font-headline-lg text-secondary">{{ count_verified }}</p>
+    <p class="mt-1 text-xs text-on-surface-variant">Auto and manual verified documents</p>
+  </div>
+</div>
+<div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-4">
+    <p class="text-xs text-on-surface-variant">AI pass rate</p>
+    <p class="mt-1 text-xl text-secondary">{{ audit_kpis.ai_pass_rate }}%</p>
+  </div>
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-4">
+    <p class="text-xs text-on-surface-variant">Correction density</p>
+    <p class="mt-1 text-xl text-primary">{{ audit_kpis.correction_density }}%</p>
+  </div>
+  <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-4">
+    <p class="text-xs text-on-surface-variant">Duplicates detected</p>
+    <p class="mt-1 text-xl text-amber-300">{{ count_duplicates }}</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+  <div class="space-y-6 lg:col-span-2">
+    <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-6">
+      <div class="mb-6 flex items-center justify-between">
+        <h2 class="font-headline-md text-[18px] text-primary">Recent Extractions</h2>
+        <a href="{% url 'documents:history' %}" class="text-on-surface-variant transition-colors hover:text-primary">View all</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left font-body-md text-body-md">
+          <thead>
+            <tr class="border-b border-[#262626] font-label-sm text-label-sm text-on-surface-variant">
+              <th class="pb-3 font-medium">Vendor</th>
+              <th class="pb-3 font-medium">Date</th>
+              <th class="pb-3 font-medium">Amount</th>
+              <th class="pb-3 text-right font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#262626]">
+            {% for d in recent_documents %}
+            <tr>
+              <td class="py-4 text-primary">{% if d.extracted %}{{ d.extracted.vendor_name|default:"—" }}{% else %}—{% endif %}</td>
+              <td class="py-4 text-on-surface-variant">{% if d.extracted and d.extracted.date_issued %}{{ d.extracted.date_issued }}{% else %}—{% endif %}</td>
+              <td class="py-4 font-mono">{% if d.extracted and d.extracted.total_amount is not None %}${{ d.extracted.total_amount }}{% else %}—{% endif %}</td>
+              <td class="py-4 text-right">
+                {% if d.status == "verified" %}
+                <span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-secondary"><span class="h-1.5 w-1.5 rounded-full bg-secondary"></span> Verified</span>
+                {% elif d.status == "audit_required" %}
+                <span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-error"><span class="h-1.5 w-1.5 rounded-full bg-error"></span> Needs audit</span>
+                {% else %}
+                <span class="inline-flex items-center gap-1 font-label-sm text-label-sm text-on-surface-variant"><span class="h-1.5 w-1.5 rounded-full bg-on-surface-variant"></span> Pending AI</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="py-6 text-on-surface-variant">No documents yet. Use Bulk Upload to add files.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="overflow-hidden rounded-lg border border-[#262626] bg-[#1A1A1A]">
+      <div class="flex flex-wrap items-center justify-between gap-2 border-b border-[#262626] px-4 py-3">
+        <h2 class="font-headline-md text-[16px] text-primary">Pipeline Alerts (reduced noise)</h2>
+        <a href="{% url 'documents:extraction_logs' %}" class="font-label-sm text-label-sm text-secondary hover:text-primary">Open full logs</a>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left font-body-md text-body-md">
+          <thead>
+            <tr class="border-b border-[#262626] font-label-sm text-label-sm text-on-surface-variant">
+              <th class="px-4 py-2">Time</th>
+              <th class="px-4 py-2">Level</th>
+              <th class="px-4 py-2">Doc</th>
+              <th class="px-4 py-2">Message</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-[#262626]">
+            {% for log in critical_pipeline_logs %}
+            <tr>
+              <td class="whitespace-nowrap px-4 py-2 text-on-surface-variant">{{ log.created_at|date:"M j H:i:s" }}</td>
+              <td class="px-4 py-2 uppercase {% if log.level == 'error' %}text-error{% else %}text-amber-400{% endif %}">{{ log.level }}</td>
+              <td class="px-4 py-2"><a href="{% url 'documents:extraction_logs' %}?document={{ log.document_id }}" class="font-mono text-[12px] text-primary hover:underline">TX-{{ log.document_id }}</a></td>
+              <td class="max-w-md truncate px-4 py-2" title="{{ log.message }}">{{ log.message }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="px-4 py-4 text-on-surface-variant">No warning/error pipeline logs in the latest activity window.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-6">
+      <div class="mb-4 flex items-center gap-2">
+        <span class="material-symbols-outlined text-sm text-primary">auto_awesome</span>
+        <h2 class="font-headline-md text-[16px] text-primary">Engine Insights</h2>
+      </div>
+      {% if insight_message %}
+      <p class="mb-4 font-body-md text-body-md leading-relaxed text-on-surface-variant">{{ insight_message }}</p>
+      {% else %}
+      <p class="mb-4 font-body-md text-body-md leading-relaxed text-on-surface-variant">No recurring extraction issues detected recently. Upload documents to build history.</p>
+      {% endif %}
+      <a href="{% url 'documents:reports' %}" class="font-label-sm text-label-sm text-primary underline decoration-outline-variant underline-offset-4 transition-colors hover:text-secondary">View category report</a>
+    </div>
+
+    <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-6">
+      <h2 class="mb-6 font-headline-md text-[16px] text-primary">Extraction Categories</h2>
+      <div class="space-y-4">
+        {% for row in category_bars %}
+        <div>
+          <div class="mb-1 flex justify-between font-label-sm text-label-sm text-on-surface-variant">
+            <span>{{ row.name }}</span>
+            <span>{{ row.pct }}%</span>
+          </div>
+          <div class="h-1 w-full overflow-hidden rounded-full bg-surface-container-highest">
+            <div class="h-full bg-secondary" style="width: {{ row.pct }}%;"></div>
+          </div>
+        </div>
+        {% empty %}
+        <p class="text-sm text-on-surface-variant">No verified category totals yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rounded-lg border border-[#262626] bg-[#1A1A1A] p-6">
+      <h2 class="mb-3 font-headline-md text-[16px] text-primary">Latest Pipeline Events</h2>
+      <ul class="space-y-3 text-sm">
+        {% for log in recent_pipeline_logs %}
+          <li class="border-b border-[#262626] pb-2 last:border-0">
+            <p class="font-mono text-[11px] text-on-surface-variant">{{ log.created_at|date:"H:i:s" }} · {{ log.event|default:"event" }}</p>
+            <p class="truncate text-on-surface" title="{{ log.message }}">{{ log.message }}</p>
+          </li>
+        {% empty %}
+          <li class="text-on-surface-variant">No recent pipeline events.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  const el = document.getElementById('queue-live');
+  if (!el) return;
+  function tick() {
+    fetch('{% url "queue-stats" %}', { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (j) {
+        if (!j) return;
+        el.textContent = 'Queue: ' + j.pending_extraction + ' pending · ' + j.audit_required + ' audit · ' + j.verified + ' verified';
+      })
+      .catch(function () {});
+  }
+  tick();
+  setInterval(tick, 30000);
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Categories — Aether Finance{% endblock %}
+{% block content %}
+<section class="mb-8 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">Categories</h1>
+    <p class="mt-2 font-body-md text-body-md text-on-surface-variant">Approve system-generated categories to edit them as custom, or rename any category. Add new custom categories below.</p>
+  </div>
+  <a href="{% url 'documents:settings' %}?tab=management" class="rounded-DEFAULT border border-outline-variant px-4 py-2 font-label-sm text-label-sm text-on-surface hover:border-primary hover:text-primary">
+    Back to settings
+  </a>
+</section>
+
+<div class="mb-10 max-w-xl rounded-lg border border-[#262626] bg-[#1A1A1A] p-6">
+  <h2 class="mb-4 font-headline-md text-[18px] text-primary">Add category</h2>
+  <form method="post" class="space-y-4">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<ul class="aether-errorlist">{{ form.non_field_errors }}</ul>{% endif %}
+    <div>
+      <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant" for="{{ form.name.id_for_label }}">Name</label>
+      {{ form.name }}
+      {{ form.name.errors }}
+    </div>
+    <div>
+      <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant" for="{{ form.description.id_for_label }}">Description</label>
+      {{ form.description }}
+      {{ form.description.errors }}
+    </div>
+    <button type="submit" class="rounded-DEFAULT border border-outline-variant bg-primary px-4 py-2 font-label-sm text-label-sm text-on-primary transition-colors hover:bg-primary-fixed-dim">Save</button>
+  </form>
+</div>
+
+<div class="overflow-hidden rounded-lg border border-[#262626] bg-[#1A1A1A]">
+  <table class="w-full text-left">
+    <thead>
+      <tr class="border-b border-[#262626] font-label-sm text-label-sm text-on-surface-variant">
+        <th class="px-4 py-3">Name</th>
+        <th class="px-4 py-3">Description</th>
+        <th class="px-4 py-3 text-right">Type</th>
+        <th class="px-4 py-3 text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-[#262626] font-body-md text-body-md">
+      {% for c in categories %}
+      <tr>
+        <td class="px-4 py-3 text-primary">{{ c.name }}</td>
+        <td class="px-4 py-3 text-on-surface-variant">{{ c.description|truncatewords:20|default:"—" }}</td>
+        <td class="px-4 py-3 text-right text-on-surface-variant">
+          {% if c.is_system_generated %}System{% else %}Custom{% endif %}
+        </td>
+        <td class="px-4 py-3 text-right">
+          <div class="flex flex-col items-end gap-2 sm:flex-row sm:justify-end">
+            {% if c.is_system_generated %}
+            <form method="post" class="inline">
+              {% csrf_token %}
+              <button type="submit" name="approve_category" value="{{ c.pk }}" class="rounded-DEFAULT border border-outline-variant px-2 py-1 font-label-sm text-label-sm text-on-surface hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">Approve</button>
+            </form>
+            {% endif %}
+            <form method="post" class="flex flex-wrap items-center justify-end gap-2">
+              {% csrf_token %}
+              <input type="hidden" name="rename_category" value="{{ c.pk }}">
+              <label class="sr-only" for="rename-{{ c.pk }}">New name for {{ c.name }}</label>
+              <input id="rename-{{ c.pk }}" type="text" name="rename_to" value="{{ c.name }}" class="w-40 min-w-0 rounded-DEFAULT border border-outline-variant bg-surface-container-low px-2 py-1 text-sm text-on-surface focus:ring-1 focus:ring-outline">
+              <button type="submit" class="rounded-DEFAULT border border-outline-variant px-2 py-1 font-label-sm text-label-sm text-on-surface hover:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">Rename</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="px-4 py-6 text-center text-on-surface-variant">No categories.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

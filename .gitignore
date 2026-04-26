@@ -1,0 +1,26 @@
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+venv/
+.venv/
+env/
+.env
+db.sqlite3
+media/
+staticfiles/
+*.egg-info/
+dist/
+build/
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.idea/
+.vscode/
+*.log
+
+
+models/
+"RECEIPTS TEST/"

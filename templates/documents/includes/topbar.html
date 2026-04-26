@@ -1,0 +1,28 @@
+<header class="sticky top-0 z-40 flex h-16 w-full shrink-0 items-center justify-between border-b border-[#262626] bg-[#0D0D0D] px-6">
+  <form action="{% url 'documents:history' %}" method="get" class="flex items-center gap-4" role="search">
+    <label for="topbar-search" class="sr-only">Search invoices, filenames, and vendors</label>
+    <div class="relative">
+      <span class="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-on-surface-variant" aria-hidden="true">search</span>
+      <input id="topbar-search" type="search" name="q" value="{{ request.GET.q|default:'' }}"
+        class="w-64 rounded-DEFAULT border border-surface-container-highest bg-[#1A1A1A] py-1.5 pl-9 pr-4 font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant focus:border-outline-variant focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-[#0D0D0D]"
+        placeholder="Search invoices, amounts, vendors…" autocomplete="off">
+    </div>
+  </form>
+  <div class="pointer-events-none absolute left-1/2 hidden -translate-x-1/2 md:block">
+    {% include "documents/includes/brand_logo.html" with variant="compact" %}
+  </div>
+  <div class="flex items-center gap-4">
+    <a href="{% url 'documents:audit_queue' %}" class="relative rounded-sm text-neutral-500 transition-colors hover:text-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D0D0D]" title="Needs review">
+      <span class="material-symbols-outlined">notifications</span>
+      {% if needs_audit_count %}
+      <span class="absolute -right-1 -top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-error px-0.5 text-[10px] font-medium text-on-error">{{ needs_audit_count }}</span>
+      {% endif %}
+    </a>
+    <a href="{% url 'documents:settings' %}" class="rounded-sm text-neutral-500 transition-colors hover:text-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D0D0D]">
+      <span class="material-symbols-outlined">settings</span>
+    </a>
+    <div class="ml-2 flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-outline-variant bg-surface-container-highest">
+      <span class="material-symbols-outlined text-on-surface-variant text-[20px]">person</span>
+    </div>
+  </div>
+</header>

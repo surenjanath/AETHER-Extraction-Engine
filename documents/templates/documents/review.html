@@ -1,0 +1,562 @@
+{% extends "base.html" %}
+{% load dict_extras %}
+{% block title %}Review #{{ document.pk }} — Aether Finance{% endblock %}
+{% block content %}
+<div class="-m-8 flex min-h-[calc(100vh-6rem)] flex-col overflow-hidden lg:flex-row">
+  <section class="flex flex-1 flex-col overflow-hidden border-[#262626] bg-surface-container-lowest p-4 lg:border-r">
+    <div class="mb-4 flex flex-wrap items-center gap-2">
+      <span class="rounded-full border border-outline-variant px-3 py-1 text-[11px] uppercase tracking-wide text-on-surface-variant">Flow</span>
+      <span class="rounded-full border border-outline-variant/80 bg-surface-container-low px-3 py-1 text-[11px] text-on-surface">Upload</span>
+      <span class="text-on-surface-variant">→</span>
+      <span class="rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] text-primary">Extracting</span>
+      <span class="text-on-surface-variant">→</span>
+      <span class="rounded-full border border-outline-variant/80 bg-surface-container-low px-3 py-1 text-[11px] text-on-surface">Audit</span>
+      <span class="text-on-surface-variant">→</span>
+      <span class="rounded-full border border-outline-variant/80 bg-surface-container-low px-3 py-1 text-[11px] text-on-surface">Verified</span>
+    </div>
+    <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h2 class="font-headline-md text-headline-md text-on-surface">{{ document.original_filename|default:document.pk }}</h2>
+        <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 font-label-sm text-label-sm text-on-surface-variant">
+          {% if file_size_display %}{{ file_size_display }} ·{% endif %}
+          <a href="{% url 'documents:audit_queue' %}" id="link-back-queue" class="text-secondary hover:text-primary">Back to queue</a>
+          ·
+          <a href="{% url 'documents:document_activity' document.pk %}" class="text-secondary hover:text-primary">Activity</a>
+          ·
+          <a href="{% url 'documents:extraction_logs' %}?document={{ document.pk }}" class="text-secondary hover:text-primary">Pipeline logs</a>
+          {% if review_prev_pk %}
+          · <a href="{% url 'documents:review' review_prev_pk %}" class="text-secondary hover:text-primary" title="Older in queue">Previous</a>
+          {% endif %}
+          {% if review_next_pk %}
+          · <a href="{% url 'documents:review' review_next_pk %}" class="text-secondary hover:text-primary" title="Newer in queue">Next</a>
+          {% endif %}
+        </p>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {% if document.is_duplicate and document.canonical_document_id %}
+        <span class="rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 text-[11px] text-amber-300">Duplicate of #{{ document.canonical_document_id }}</span>
+        {% endif %}
+        {% if review_next_pk %}
+        <button type="button" id="btn-next-process" data-next-pk="{{ review_next_pk }}" data-next-url="{% url 'documents:review' review_next_pk %}" data-next-requeue-url="{% url 'invoice-requeue' review_next_pk %}" class="rounded-DEFAULT border border-primary/40 bg-primary/10 px-2.5 py-1 font-label-sm text-label-sm text-primary transition-colors hover:bg-primary/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">Next &amp; process</button>
+        {% endif %}
+        {% if document.status == 'pending_extraction' or document.status == 'audit_required' %}
+        <button type="button" id="btn-requeue-review" class="rounded-DEFAULT border border-outline-variant px-2.5 py-1 font-label-sm text-label-sm text-on-surface transition-colors hover:border-primary hover:text-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">Re-run extraction</button>
+        {% endif %}
+        <div class="inline-flex overflow-hidden rounded-DEFAULT border border-outline-variant text-[11px]">
+          <button type="button" class="preview-size-btn border-r border-outline-variant px-2 py-1 text-on-surface-variant hover:text-primary" data-size="small">Small</button>
+          <button type="button" class="preview-size-btn border-r border-outline-variant px-2 py-1 text-primary bg-primary/10" data-size="medium">Medium</button>
+          <button type="button" class="preview-size-btn px-2 py-1 text-on-surface-variant hover:text-primary" data-size="large">Large</button>
+        </div>
+      </div>
+    </div>
+    <div class="relative flex min-h-[340px] flex-1 items-center justify-center overflow-hidden rounded-lg border border-surface-container-high bg-surface-container-low">
+      <div class="absolute left-3 top-3 z-10 inline-flex items-center gap-2 rounded-full border border-outline-variant/60 bg-[#111111dd] px-3 py-1 text-[11px] text-on-surface shadow">
+        <span id="live-heartbeat" class="h-2 w-2 animate-pulse rounded-full bg-primary" aria-hidden="true"></span>
+        <span>Live preview</span>
+      </div>
+      {% if is_image %}
+      <img id="preview-media" src="{{ document.file.url }}" alt="Receipt" class="max-h-[72%] max-w-[72%] object-contain transition-all duration-200">
+      {% elif is_pdf %}
+      <iframe id="preview-media" src="{{ document.file.url }}" title="PDF preview" class="h-[78%] min-h-[360px] w-[82%] border-0 transition-all duration-200"></iframe>
+      {% else %}
+      <a href="{{ document.file.url }}" target="_blank" rel="noopener" class="text-primary underline">Open file</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <aside class="flex w-full shrink-0 flex-col overflow-hidden border-[#262626] bg-[#1A1A1A] lg:w-[44rem] xl:w-[48rem] lg:border-l">
+    <div class="border-b border-surface-container-high p-4">
+      <div class="mb-2 flex items-center gap-2">
+        {% if not audit.all_ok %}
+        <span class="material-symbols-outlined text-xl text-error">error</span>
+        {% else %}
+        <span class="material-symbols-outlined text-xl text-secondary">check_circle</span>
+        {% endif %}
+        <h3 class="font-headline-md text-lg text-on-surface">Extraction Review</h3>
+      </div>
+      {% if not audit.all_ok %}
+      <p class="font-body-md text-body-md text-on-surface-variant">{{ audit.messages|length }} check(s) need attention.</p>
+      <ul class="mt-2 list-inside list-disc font-body-md text-sm text-error">
+        {% for m in audit.messages %}<li>{{ m }}</li>{% endfor %}
+      </ul>
+      {% else %}
+      <p class="font-body-md text-body-md text-on-surface-variant">All automated checks passed.</p>
+      {% endif %}
+      <div id="live-extraction-overlay" class="mt-4 rounded-lg border border-outline-variant/60 bg-surface-container-low p-4 text-xs text-on-surface shadow-sm">
+        <div class="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm text-primary">bolt</span>
+            <span class="font-label-sm uppercase tracking-wide text-on-surface-variant">Live Control Center</span>
+          </div>
+          <button type="button" id="live-pause-btn" class="rounded border border-outline-variant px-2 py-0.5 text-[10px] text-on-surface-variant hover:text-on-surface">Pause</button>
+        </div>
+        <div class="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          <div class="rounded border border-outline-variant/50 bg-surface px-2 py-1.5">
+            <div class="text-[10px] uppercase tracking-wide text-on-surface-variant">Status</div>
+            <div id="live-status-badge" class="mt-1 inline-flex rounded-full border border-outline-variant px-2 py-0.5 text-[10px] text-on-surface-variant">{{ document.status }}</div>
+          </div>
+          <div class="rounded border border-outline-variant/50 bg-surface px-2 py-1.5">
+            <div class="text-[10px] uppercase tracking-wide text-on-surface-variant">Stage</div>
+            <div id="live-stage-label" class="mt-1 text-[11px] text-on-surface">Waiting…</div>
+          </div>
+          <div class="rounded border border-outline-variant/50 bg-surface px-2 py-1.5">
+            <div class="text-[10px] uppercase tracking-wide text-on-surface-variant">Last update</div>
+            <div id="live-last-update" class="mt-1 text-[11px] text-on-surface">—</div>
+          </div>
+        </div>
+        <div class="mb-2 rounded border border-outline-variant/50 bg-surface p-2">
+          <div class="mb-1 text-[10px] uppercase tracking-wide text-on-surface-variant">Current action</div>
+          <div id="live-current-action" class="font-mono text-[11px] text-on-surface">Waiting for first extraction event…</div>
+        </div>
+        <div class="mb-2 grid grid-cols-5 gap-1 text-[10px]">
+          <div id="step-ingest" class="rounded border border-outline-variant/50 px-1.5 py-1 text-center text-on-surface-variant">Ingest</div>
+          <div id="step-read" class="rounded border border-outline-variant/50 px-1.5 py-1 text-center text-on-surface-variant">Read</div>
+          <div id="step-ocr" class="rounded border border-outline-variant/50 px-1.5 py-1 text-center text-on-surface-variant">OCR</div>
+          <div id="step-structure" class="rounded border border-outline-variant/50 px-1.5 py-1 text-center text-on-surface-variant">Structure</div>
+          <div id="step-audit" class="rounded border border-outline-variant/50 px-1.5 py-1 text-center text-on-surface-variant">Audit</div>
+        </div>
+        <div class="mb-3">
+          <div class="h-1.5 w-full overflow-hidden rounded-full bg-surface-container-highest">
+            <div id="live-progress-bar" class="h-full w-[10%] bg-primary transition-all duration-500"></div>
+          </div>
+        </div>
+        <div id="live-fields" class="grid grid-cols-2 gap-x-3 gap-y-1.5 rounded border border-outline-variant/50 bg-surface p-2 font-mono text-[11px]">
+          <div class="text-on-surface-variant">vendor</div><div id="live-vendor">—</div>
+          <div class="text-on-surface-variant">date</div><div id="live-date">—</div>
+          <div class="text-on-surface-variant">invoice_no</div><div id="live-invoice-number">—</div>
+          <div class="text-on-surface-variant">doc_type</div><div id="live-document-type">—</div>
+          <div class="text-on-surface-variant">subtotal</div><div id="live-subtotal">—</div>
+          <div class="text-on-surface-variant">tax</div><div id="live-tax">—</div>
+          <div class="text-on-surface-variant">total</div><div id="live-total">—</div>
+        </div>
+        <div id="live-error" class="mt-2 hidden rounded border border-error/40 bg-error/10 px-2 py-1 text-[11px] text-error"></div>
+        <div class="mt-2 border-t border-outline-variant/40 pt-2">
+          <div class="mb-1 flex items-center justify-between">
+            <span class="text-[10px] uppercase tracking-wide text-on-surface-variant">Pipeline feed</span>
+            <span id="live-events-count" class="text-[10px] text-on-surface-variant">0 events</span>
+          </div>
+          <ul id="live-feed" class="max-h-44 space-y-1 overflow-y-auto font-mono text-[10px] text-on-surface-variant"></ul>
+        </div>
+      </div>
+      {% if extraction_logs %}
+      <details class="mt-4 rounded border border-outline-variant bg-surface-container-low p-3">
+        <summary class="cursor-pointer font-label-sm text-label-sm text-primary">Recent pipeline events ({{ extraction_logs|length }})</summary>
+        <ul class="mt-2 max-h-48 space-y-2 overflow-y-auto font-mono text-[11px] text-on-surface-variant">
+          {% for log in extraction_logs %}
+          <li>
+            <span class="text-on-surface-variant">{{ log.created_at|date:"H:i:s" }}</span>
+            <span class="text-primary">{{ log.event|default:log.level }}</span>
+            — {{ log.message|truncatechars:120 }}
+          </li>
+          {% endfor %}
+        </ul>
+        <a href="{% url 'documents:extraction_logs' %}?document={{ document.pk }}" class="mt-2 inline-block font-label-sm text-label-sm text-secondary hover:text-primary">Open full log</a>
+      </details>
+      {% endif %}
+    </div>
+
+    <div class="flex-1 space-y-4 overflow-y-auto p-4">
+      <form id="review-form" method="post" class="space-y-4">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="aether-errorlist" role="alert">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="grid grid-cols-1 gap-3 xl:grid-cols-2">
+          <div class="rounded-lg border border-outline-variant bg-surface p-4">
+            <h4 class="mb-4 font-label-sm uppercase tracking-wider text-on-surface-variant">Header Data</h4>
+            <div class="space-y-4">
+              <div>
+                <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant" for="{{ form.vendor_name.id_for_label }}">Vendor Name</label>
+                <div class="relative">{{ form.vendor_name }}{% if not audit.parse_ok and not form.vendor_name.value %}<span class="absolute right-3 top-2.5 text-error">!</span>{% endif %}</div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Invoice date</label>
+                  {{ form.date_issued }}
+                </div>
+                <div>
+                  <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Category</label>
+                  {{ form.category }}
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Invoice number</label>
+                  {{ form.invoice_number }}
+                </div>
+                <div>
+                  <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">Document type</label>
+                  {{ form.document_type }}
+                </div>
+              </div>
+              <div class="grid grid-cols-3 gap-3">
+                <div><label class="mb-1 block font-label-sm text-on-surface-variant">Subtotal</label>{{ form.subtotal }}</div>
+                <div><label class="mb-1 block font-label-sm text-on-surface-variant">Tax</label>{{ form.tax_amount }}</div>
+                <div><label class="mb-1 block font-label-sm text-on-surface-variant">Total</label>{{ form.total_amount }}{% if not audit.tax_total_ok %}<span class="ml-1 text-error" title="Subtotal+Tax vs Total">⚠</span>{% endif %}</div>
+              </div>
+              <label class="flex items-center gap-2 font-body-md text-sm text-on-surface-variant">{{ form.force_verify }} {{ form.force_verify.label }}</label>
+            </div>
+          </div>
+          <div class="rounded-lg border border-outline-variant bg-surface p-4">
+            <h4 class="mb-2 font-label-sm uppercase tracking-wider text-on-surface-variant">Live Parsed Snapshot</h4>
+            <p class="mb-3 text-xs text-on-surface-variant">These values update from the live extraction stream while this page is open.</p>
+            <div class="grid grid-cols-2 gap-2 font-mono text-[11px]">
+              <div class="rounded border border-outline-variant/40 bg-surface-container-low p-2"><div class="text-[10px] text-on-surface-variant">Vendor</div><div id="live-vendor-2">—</div></div>
+              <div class="rounded border border-outline-variant/40 bg-surface-container-low p-2"><div class="text-[10px] text-on-surface-variant">Date</div><div id="live-date-2">—</div></div>
+              <div class="rounded border border-outline-variant/40 bg-surface-container-low p-2"><div class="text-[10px] text-on-surface-variant">Invoice #</div><div id="live-invoice-number-2">—</div></div>
+              <div class="rounded border border-outline-variant/40 bg-surface-container-low p-2"><div class="text-[10px] text-on-surface-variant">Type</div><div id="live-document-type-2">—</div></div>
+              <div class="rounded border border-outline-variant/40 bg-surface-container-low p-2"><div class="text-[10px] text-on-surface-variant">Subtotal</div><div id="live-subtotal-2">—</div></div>
+              <div class="rounded border border-outline-variant/40 bg-surface-container-low p-2"><div class="text-[10px] text-on-surface-variant">Tax</div><div id="live-tax-2">—</div></div>
+              <div class="col-span-2 rounded border border-outline-variant/40 bg-surface-container-low p-2"><div class="text-[10px] text-on-surface-variant">Total</div><div id="live-total-2">—</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative overflow-hidden rounded-lg border border-outline-variant bg-surface p-3 {% if not audit.line_sum_ok %}border-error/50{% endif %}">
+          {% if not audit.line_sum_ok %}<div class="absolute left-0 top-0 h-full w-1 bg-error"></div>{% endif %}
+          <div class="mb-4 flex items-center justify-between pl-2">
+            <h4 class="font-label-sm uppercase tracking-wider {% if not audit.line_sum_ok %}text-error{% else %}text-on-surface-variant{% endif %}">Line Items</h4>
+            {% if not audit.line_sum_ok %}<span class="rounded-full border border-error/20 bg-error/10 px-2 py-1 text-[10px] font-medium text-error">Math Mismatch</span>{% endif %}
+          </div>
+          {{ line_formset.management_form }}
+          <div class="space-y-3 pl-2">
+            {% for lf in line_formset %}
+            {% with la=line_audit_by_id|get_item:lf.instance.pk %}
+            <div class="rounded-DEFAULT border p-3 {% if la and not la.ok %}border-error bg-error/5{% else %}border-outline-variant bg-surface-container-low{% endif %}">
+              {{ lf.id }}
+              <div class="mb-2 grid gap-2 md:grid-cols-2">
+                <div>
+                  <label class="mb-1 block font-label-sm text-on-surface-variant">Description</label>
+                  {{ lf.description }}
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                  <div><label class="mb-1 block font-label-sm text-on-surface-variant">Qty</label>{{ lf.quantity }}</div>
+                  <div><label class="mb-1 block font-label-sm text-on-surface-variant">Unit</label>{{ lf.unit_price }}</div>
+                  <div><label class="mb-1 block font-label-sm {% if la and not la.ok %}text-error{% else %}text-on-surface-variant{% endif %}">Total</label>{{ lf.line_total }}</div>
+                </div>
+              </div>
+              {% if la and not la.ok and la.suggested %}
+              <div class="mt-3 flex items-start gap-2 rounded-DEFAULT border border-outline-variant bg-surface-container-high p-2">
+                <span class="material-symbols-outlined mt-0.5 text-sm text-primary icon-fill">auto_awesome</span>
+                <div>
+                  <p class="mb-1 font-label-sm text-xs text-on-surface-variant">AI Suggestion</p>
+                  <p class="font-body-md text-sm text-on-surface">Calculated line total ≈ <span class="font-medium">{{ la.suggested }}</span> from Qty × Unit.</p>
+                </div>
+              </div>
+              {% endif %}
+              <div class="mt-2 flex items-center gap-2 text-on-surface-variant">
+                {{ lf.DELETE.label_tag }}{{ lf.DELETE }} Remove
+                {{ lf.ordering }}
+              </div>
+            </div>
+            {% endwith %}
+            {% endfor %}
+          </div>
+          {{ line_formset.non_form_errors }}
+        </div>
+
+        <button type="submit" class="w-full rounded-DEFAULT border border-outline-variant bg-primary py-2.5 font-label-sm text-label-sm text-on-primary transition-colors hover:bg-primary-fixed-dim focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#1A1A1A]">Save &amp; return to queue</button>
+      </form>
+    </div>
+  </aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  function getCookie(name) {
+    const value = '; ' + document.cookie;
+    const parts = value.split('; ' + name + '=');
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+  const btn = document.getElementById('btn-requeue-review');
+  const btnNextProcess = document.getElementById('btn-next-process');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      const csrf = document.querySelector('#review-form [name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+      fetch('{% url "invoice-requeue" document.pk %}', {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf || '' },
+        credentials: 'same-origin',
+      }).then(function (r) {
+        if (!r.ok) {
+          return r.json().catch(function () { return {}; }).then(function (j) {
+            var d = j && j.detail;
+            var msg = typeof d === 'string' ? d : (Array.isArray(d) ? d.map(function (x) { return x.string || x; }).join(' ') : null);
+            throw new Error(msg || ('HTTP ' + r.status));
+          });
+        }
+        return r.json();
+      }).then(function () {
+        btn.textContent = 'Queued';
+        btn.disabled = true;
+      }).catch(function (e) {
+        alert(e.message || 'Requeue failed');
+      });
+    });
+  }
+  if (btnNextProcess) {
+    btnNextProcess.addEventListener('click', function () {
+      const nextUrl = btnNextProcess.getAttribute('data-next-url');
+      const nextRequeueUrl = btnNextProcess.getAttribute('data-next-requeue-url');
+      if (!nextUrl || !nextRequeueUrl) return;
+      const csrf = document.querySelector('#review-form [name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken');
+      btnNextProcess.disabled = true;
+      btnNextProcess.textContent = 'Queuing…';
+      fetch(nextRequeueUrl, {
+        method: 'POST',
+        headers: { 'X-CSRFToken': csrf || '' },
+        credentials: 'same-origin',
+      }).then(function () {
+        window.location.href = nextUrl;
+      }).catch(function () {
+        window.location.href = nextUrl;
+      });
+    });
+  }
+  const form = document.getElementById('review-form');
+  if (form) {
+    document.addEventListener('keydown', function (e) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+      if (e.key === 'Escape') {
+        const back = document.getElementById('link-back-queue');
+        if (back) window.location = back.href;
+      }
+      if (e.key.toLowerCase() === 'n') {
+        const nextBtn = document.getElementById('btn-next-process');
+        if (nextBtn && !nextBtn.disabled) nextBtn.click();
+      }
+      if (e.key.toLowerCase() === 'r') {
+        const rqBtn = document.getElementById('btn-requeue-review');
+        if (rqBtn && !rqBtn.disabled) rqBtn.click();
+      }
+    });
+  }
+
+  function setText(id, value) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = value && String(value).trim() ? String(value) : '—';
+  }
+
+  function renderLive(payload) {
+    if (!payload) return;
+    const badge = document.getElementById('live-status-badge');
+    const status = payload.status || 'unknown';
+    if (badge) {
+      badge.textContent = status;
+      badge.classList.remove('border-secondary/40', 'bg-secondary/10', 'text-secondary', 'border-error/40', 'bg-error/10', 'text-error', 'border-outline-variant', 'text-on-surface-variant');
+      if (status === 'verified') {
+        badge.classList.add('border-secondary/40', 'bg-secondary/10', 'text-secondary');
+      } else if (status === 'audit_required') {
+        badge.classList.add('border-error/40', 'bg-error/10', 'text-error');
+      } else {
+        badge.classList.add('border-outline-variant', 'text-on-surface-variant');
+      }
+    }
+
+    const data = payload.extracted || {};
+    setText('live-vendor', data.vendor_name);
+    setText('live-vendor-2', data.vendor_name);
+    setText('live-date', data.date_issued);
+    setText('live-date-2', data.date_issued);
+    setText('live-invoice-number', data.invoice_number);
+    setText('live-invoice-number-2', data.invoice_number);
+    setText('live-document-type', data.document_type);
+    setText('live-document-type-2', data.document_type);
+    setText('live-subtotal', data.subtotal);
+    setText('live-subtotal-2', data.subtotal);
+    setText('live-tax', data.tax_amount);
+    setText('live-tax-2', data.tax_amount);
+    setText('live-total', data.total_amount);
+    setText('live-total-2', data.total_amount);
+
+    const err = document.getElementById('live-error');
+    if (err) {
+      if (payload.extraction_error) {
+        err.textContent = payload.extraction_error;
+        err.classList.remove('hidden');
+      } else {
+        err.textContent = '';
+        err.classList.add('hidden');
+      }
+    }
+
+    const feed = document.getElementById('live-feed');
+    const stage = document.getElementById('live-stage-label');
+    const progress = document.getElementById('live-progress-bar');
+    const update = document.getElementById('live-last-update');
+    const counter = document.getElementById('live-events-count');
+    const heartbeat = document.getElementById('live-heartbeat');
+    const currentAction = document.getElementById('live-current-action');
+    const stepIds = ['step-ingest', 'step-read', 'step-ocr', 'step-structure', 'step-audit'];
+    const logs = payload.recent_logs || [];
+    let phase = 'Initializing';
+    let pct = 10;
+    let activeStep = 0;
+    const latest = logs.length ? logs[logs.length - 1] : null;
+    const latestEvent = latest && latest.event ? String(latest.event) : '';
+    if (latestEvent.includes('extraction_started') || latestEvent.includes('zip_member_created')) {
+      phase = 'Ingesting file';
+      pct = 14;
+      activeStep = 0;
+    }
+    if (latestEvent.includes('pdf_') || latestEvent.includes('image_') || latestEvent.includes('generic_file')) {
+      phase = 'Reading document';
+      pct = 28;
+      activeStep = 1;
+    }
+    if (latestEvent.includes('ocr') || latestEvent.includes('vision')) {
+      phase = 'OCR / Vision';
+      pct = 52;
+      activeStep = 2;
+    }
+    if (latestEvent.includes('text_') || latestEvent.includes('persist')) {
+      phase = 'Structuring fields';
+      pct = 74;
+      activeStep = 3;
+    }
+    if (latestEvent.includes('audit')) {
+      phase = 'Audit checks';
+      pct = 88;
+      activeStep = 4;
+    }
+    if (status === 'verified') {
+      phase = 'Completed';
+      pct = 100;
+      activeStep = 4;
+    } else if (status === 'audit_required') {
+      phase = 'Needs review';
+      pct = 100;
+      activeStep = 4;
+    }
+    stepIds.forEach(function (id, idx) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('border-secondary/50', 'bg-secondary/10', 'text-secondary', 'border-primary/50', 'bg-primary/10', 'text-primary');
+      if (idx < activeStep) {
+        el.classList.add('border-secondary/50', 'bg-secondary/10', 'text-secondary');
+      } else if (idx === activeStep) {
+        el.classList.add('border-primary/50', 'bg-primary/10', 'text-primary');
+      }
+    });
+    if (stage) stage.textContent = phase;
+    if (currentAction) {
+      const actionText = latest ? ((latest.event || 'event') + ' — ' + (latest.message || 'processing')) : 'Waiting for first extraction event…';
+      currentAction.textContent = actionText;
+    }
+    if (progress) progress.style.width = pct + '%';
+    if (update) {
+      const now = new Date();
+      update.textContent = 'Updated ' + now.toLocaleTimeString();
+    }
+    if (counter) counter.textContent = logs.length + ' events';
+    if (heartbeat) {
+      heartbeat.classList.remove('bg-secondary', 'bg-error', 'bg-primary');
+      heartbeat.classList.add(status === 'audit_required' ? 'bg-error' : status === 'verified' ? 'bg-secondary' : 'bg-primary');
+    }
+
+    if (feed) {
+      feed.innerHTML = '';
+      logs.forEach(function (item) {
+        const li = document.createElement('li');
+        const level = String(item.level || 'info').toLowerCase();
+        const t = item.created_at ? String(item.created_at).split('T').pop().slice(0, 8) : '--:--:--';
+        const e = item.event || item.level || 'log';
+        li.className = level === 'error' ? 'text-error' : (level === 'warning' ? 'text-primary' : 'text-on-surface-variant');
+        if (latest && latest.created_at === item.created_at && latest.event === item.event) {
+          li.className += ' font-semibold';
+        }
+        li.textContent = '[' + t + '] ' + e + ' — ' + (item.message || '');
+        feed.appendChild(li);
+      });
+      feed.scrollTop = feed.scrollHeight;
+    }
+  }
+
+  let liveTimer = null;
+  let livePaused = false;
+  const pauseBtn = document.getElementById('live-pause-btn');
+  if (pauseBtn) {
+    pauseBtn.addEventListener('click', function () {
+      livePaused = !livePaused;
+      pauseBtn.textContent = livePaused ? 'Resume' : 'Pause';
+      if (!livePaused) startLivePolling(true);
+    });
+  }
+  function startLivePolling(immediate) {
+    const overlay = document.getElementById('live-extraction-overlay');
+    if (!overlay) return;
+    const url = '/api/documents/{{ document.pk }}/live/';
+    let stopped = false;
+
+    async function tick() {
+      if (stopped) return;
+      if (livePaused) {
+        liveTimer = setTimeout(tick, 1200);
+        return;
+      }
+      try {
+        const r = await fetch(url, { credentials: 'same-origin' });
+        if (r.ok) {
+          const j = await r.json();
+          renderLive(j);
+          if (j.status === 'verified' || j.status === 'audit_required') stopped = true;
+        }
+      } catch (e) {
+        // Keep polling silently during transient failures.
+      }
+      if (!stopped) {
+        liveTimer = setTimeout(tick, 700);
+      }
+    }
+    if (immediate) {
+      tick();
+    } else {
+      liveTimer = setTimeout(tick, 250);
+    }
+  }
+
+  startLivePolling(false);
+
+  const media = document.getElementById('preview-media');
+  const sizeBtns = document.querySelectorAll('.preview-size-btn');
+  if (media && sizeBtns.length) {
+    function applyPreviewSize(size) {
+      media.classList.remove('max-h-[56%]', 'max-w-[56%]', 'max-h-[72%]', 'max-w-[72%]', 'max-h-[92%]', 'max-w-[92%]', 'h-[62%]', 'w-[68%]', 'h-[78%]', 'w-[82%]', 'h-[94%]', 'w-[96%]');
+      if (media.tagName === 'IFRAME') {
+        if (size === 'small') {
+          media.classList.add('h-[62%]', 'w-[68%]');
+        } else if (size === 'large') {
+          media.classList.add('h-[94%]', 'w-[96%]');
+        } else {
+          media.classList.add('h-[78%]', 'w-[82%]');
+        }
+      } else {
+        if (size === 'small') {
+          media.classList.add('max-h-[56%]', 'max-w-[56%]');
+        } else if (size === 'large') {
+          media.classList.add('max-h-[92%]', 'max-w-[92%]');
+        } else {
+          media.classList.add('max-h-[72%]', 'max-w-[72%]');
+        }
+      }
+      sizeBtns.forEach(function (btn) {
+        const active = btn.dataset.size === size;
+        btn.classList.toggle('bg-primary/10', active);
+        btn.classList.toggle('text-primary', active);
+        btn.classList.toggle('text-on-surface-variant', !active);
+      });
+    }
+    sizeBtns.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        applyPreviewSize(btn.dataset.size || 'medium');
+      });
+    });
+    applyPreviewSize('medium');
+  }
+})();
+</script>
+{% endblock %}

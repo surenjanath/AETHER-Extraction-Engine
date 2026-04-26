@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Export — Aether Finance{% endblock %}
+{% block content %}
+<div class="mx-auto max-w-lg">
+  <h1 class="mb-2 font-headline-lg text-headline-lg text-on-surface">Export verified data</h1>
+  <p class="mb-6 font-body-md text-body-md text-on-surface-variant">Only documents marked <strong class="text-primary">verified</strong> are included. Choose CSV or Excel.</p>
+  {% if presets %}
+  <div class="mb-4 flex flex-wrap gap-2 rounded-lg border border-[#262626] bg-[#1A1A1A] p-3">
+    <span class="w-full text-xs text-on-surface-variant">Saved presets</span>
+    {% for p in presets %}
+      <a href="?preset={{ p.name|urlencode }}" class="rounded border border-outline-variant px-2 py-1 text-xs text-on-surface hover:text-primary">{{ p.name }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <form method="post" class="space-y-4 rounded-lg border border-[#262626] bg-[#1A1A1A] p-6">
+    {% csrf_token %}
+    {% for field in form %}
+    <div>
+      <label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant" for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {{ field.errors }}
+    </div>
+    {% endfor %}
+    <button type="submit" class="w-full rounded-DEFAULT border border-outline-variant bg-primary py-3 font-label-sm text-label-sm text-on-primary transition-colors hover:bg-primary-fixed-dim">Download</button>
+  </form>
+</div>
+{% endblock %}

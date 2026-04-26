@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load dict_extras %}
+{% block title %}Activity — TX-{{ document.pk }}{% endblock %}
+{% block content %}
+<div class="mb-6">
+  <p class="font-label-sm text-label-sm text-on-surface-variant">
+    <a href="{% url 'documents:history' %}" class="text-primary hover:underline">History</a>
+    ·
+    <a href="{% url 'documents:extraction_logs' %}?document={{ document.pk }}" class="text-primary hover:underline">All pipeline logs</a>
+    ·
+    {% if document.status == 'audit_required' %}
+    <a href="{% url 'documents:review' document.pk %}" class="text-primary hover:underline">Review</a>
+    {% endif %}
+  </p>
+  <h1 class="mt-2 font-headline-lg text-headline-lg text-on-surface">Field activity</h1>
+  <p class="mt-1 font-body-md text-body-md text-on-surface-variant">
+    TX-{{ document.pk }} — {{ document.original_filename|default:"document" }}
+    <span class="ml-2 font-mono text-xs text-on-surface-variant">· {{ document.get_status_display }}</span>
+  </p>
+</div>
+
+<div class="overflow-hidden rounded-lg border border-[#262626] bg-[#1A1A1A]">
+  <table class="w-full text-left font-body-md text-body-md">
+    <thead>
+      <tr class="border-b border-[#262626] font-label-sm text-label-sm text-on-surface-variant">
+        <th class="px-4 py-3">When</th>
+        <th class="px-4 py-3">Field</th>
+        <th class="px-4 py-3">From (AI)</th>
+        <th class="px-4 py-3">To (user)</th>
+        <th class="px-4 py-3">By</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-[#262626]">
+      {% for log in audit_logs %}
+      <tr>
+        <td class="px-4 py-3 text-on-surface-variant whitespace-nowrap">{{ log.created_at|date:"Y-m-d H:i" }}</td>
+        <td class="px-4 py-3 font-mono text-sm text-primary">{{ log.field_changed }}</td>
+        <td class="max-w-xs truncate px-4 py-3 text-on-surface-variant" title="{{ log.original_value_from_ai }}">{{ log.original_value_from_ai|default:"—" }}</td>
+        <td class="max-w-xs truncate px-4 py-3 text-on-surface" title="{{ log.corrected_value_from_user }}">{{ log.corrected_value_from_user|default:"—" }}</td>
+        <td class="px-4 py-3 text-on-surface-variant">{% if log.changed_by %}{{ log.changed_by.get_username }}{% else %}—{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5" class="px-4 py-10 text-center text-on-surface-variant">No corrections recorded for this document yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="mb-3 mt-10 font-headline-md text-headline-md text-on-surface">Extraction pipeline</h2>
+<p class="mb-4 font-body-md text-body-md text-on-surface-variant">Structured events from the worker (file prep, Ollama calls, audit outcome). Newest first.</p>
+<div class="overflow-hidden rounded-lg border border-[#262626] bg-[#1A1A1A]">
+  <table class="w-full text-left font-body-md text-body-md">
+    <thead>
+      <tr class="border-b border-[#262626] font-label-sm text-label-sm text-on-surface-variant">
+        <th class="px-4 py-3">When</th>
+        <th class="px-4 py-3">Level</th>
+        <th class="px-4 py-3">Event</th>
+        <th class="px-4 py-3">Message</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-[#262626]">
+      {% for log in extraction_logs %}
+      <tr class="align-top">
+        <td class="whitespace-nowrap px-4 py-3 text-on-surface-variant">{{ log.created_at|date:"Y-m-d H:i:s" }}</td>
+        <td class="px-4 py-3 font-mono text-xs">{{ log.level }}</td>
+        <td class="px-4 py-3 font-mono text-xs text-primary">{{ log.event|default:"—" }}</td>
+        <td class="px-4 py-3">
+          <div>{{ log.message }}</div>
+          {% if log.details %}
+          <details class="mt-1">
+            <summary class="cursor-pointer font-label-sm text-label-sm text-secondary">Details</summary>
+            <pre class="mt-2 max-h-40 overflow-auto rounded border border-[#333] bg-[#111] p-2 font-mono text-[11px] text-on-surface-variant">{{ log.details|json_pretty }}</pre>
+          </details>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="px-4 py-10 text-center text-on-surface-variant">No pipeline events yet for this document.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}History — Aether Finance{% endblock %}
+{% block content %}
+<section class="mb-8 flex flex-wrap items-end justify-between gap-4">
+  <div>
+    <h1 class="font-headline-lg text-headline-lg text-on-surface">Audit Ledger</h1>
+    <p class="mt-2 max-w-2xl font-body-md text-body-md text-on-surface-variant">History of extracted documents and verification statuses.</p>
+  </div>
+  <div class="flex flex-wrap gap-sm">
+    <div class="flex min-w-[160px] flex-col rounded border border-outline-variant bg-surface-container-low p-sm">
+      <span class="mb-1 font-label-sm text-label-sm text-on-surface-variant">Total Processed</span>
+      <span class="font-headline-md text-headline-md text-on-surface">{{ history_total }}</span>
+    </div>
+    <div class="flex min-w-[160px] flex-col rounded border border-outline-variant bg-surface-container-low p-sm">
+      <span class="mb-1 font-label-sm text-label-sm text-on-surface-variant">Accuracy (excl. pending)</span>
+      <span class="font-headline-md text-headline-md text-on-surface">{{ history_accuracy }}%</span>
+    </div>
+  </div>
+</section>
+
+<form method="get" class="mb-4 flex flex-wrap items-end gap-3 rounded border border-outline-variant bg-surface-container-low p-3">
+  <div class="min-w-[180px] flex-1">{{ filter_form.q }}</div>
+  <div class="min-w-[140px]"><label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">{{ filter_form.days.label }}</label>{{ filter_form.days }}</div>
+  <div class="min-w-[140px]"><label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">{{ filter_form.status.label }}</label>{{ filter_form.status }}</div>
+  <div class="min-w-[160px]"><label class="mb-1 block font-label-sm text-label-sm text-on-surface-variant">{{ filter_form.category.label }}</label>{{ filter_form.category }}</div>
+  <label class="flex items-center gap-2 text-sm text-on-surface-variant">{{ filter_form.only_duplicates }} {{ filter_form.only_duplicates.label }}</label>
+  <button type="submit" class="rounded-DEFAULT border border-outline-variant bg-surface px-4 py-2 font-label-sm text-label-sm text-on-surface transition-colors hover:bg-surface-bright">Apply</button>
+  <a href="{% url 'documents:export' %}" class="ml-auto flex items-center gap-2 rounded-DEFAULT border border-dashed border-outline-variant px-4 py-2 font-label-sm text-label-sm text-on-surface hover:text-primary">Export CSV</a>
+</form>
+
+<div class="overflow-hidden rounded border border-outline-variant bg-surface-container-low">
+  <table class="w-full border-collapse text-left">
+    <thead>
+      <tr class="border-b border-surface-container-highest bg-surface-container/50">
+        <th class="px-4 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">ID</th>
+        <th class="px-4 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Processed</th>
+        <th class="px-4 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Entity</th>
+        <th class="px-4 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Amount</th>
+        <th class="px-4 py-3 font-label-sm text-label-sm font-medium text-on-surface-variant">Category</th>
+        <th class="px-4 py-3 text-right font-label-sm text-label-sm font-medium text-on-surface-variant">Status</th>
+        <th class="px-4 py-3 text-right font-label-sm text-label-sm font-medium text-on-surface-variant">Actions</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-surface-container-highest font-body-md text-body-md text-on-surface">
+      {% for d in documents %}
+      <tr class="transition-colors hover:bg-surface-container-highest/30">
+        <td class="px-4 py-3 font-mono text-[13px] text-on-surface-variant">TX-{{ d.pk }}</td>
+        <td class="px-4 py-3 text-on-surface-variant">{{ d.upload_date|date:"M j, Y · H:i" }}</td>
+        <td class="px-4 py-3 font-medium">{% if d.extracted %}{{ d.extracted.vendor_name|default:"—" }}{% else %}—{% endif %}{% if d.is_duplicate %}<span class="ml-2 rounded border border-amber-500/40 bg-amber-500/10 px-1.5 py-0.5 text-[10px] text-amber-300">duplicate</span>{% endif %}</td>
+        <td class="px-4 py-3 text-primary">{% if d.extracted and d.extracted.total_amount is not None %}${{ d.extracted.total_amount }}{% else %}—{% endif %}</td>
+        <td class="px-4 py-3">
+          {% if d.extracted and d.extracted.category %}
+          <span class="inline-flex items-center rounded border border-surface-container-highest px-2 py-0.5 text-[11px] text-on-surface-variant">{{ d.extracted.category.name }}</span>
+          {% else %}
+          <span class="text-on-surface-variant">—</span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-right">
+          {% if d.status == "verified" %}
+          <span class="inline-flex items-center justify-end gap-1.5 text-surface-tint">
+            <span class="material-symbols-outlined icon-fill text-[16px]">verified</span>
+            <span class="font-label-sm text-label-sm">Verified</span>
+          </span>
+          {% elif d.status == "audit_required" %}
+          <span class="inline-flex items-center justify-end gap-1.5 text-error">
+            <span class="material-symbols-outlined text-[16px]">error</span>
+            <span class="font-label-sm text-label-sm">Flagged</span>
+          </span>
+          {% else %}
+          <span class="inline-flex items-center justify-end gap-1.5 text-on-surface-variant opacity-80">
+            <span class="material-symbols-outlined text-[16px]">pending</span>
+            <span class="font-label-sm text-label-sm">Pending AI</span>
+          </span>
+          {% endif %}
+        </td>
+        <td class="px-4 py-3 text-right text-sm">
+          <a href="{% url 'documents:review' d.pk %}" class="text-primary hover:underline">
+            {% if d.status == "verified" %}View receipt{% else %}Open review{% endif %}
+          </a>
+          ·
+          <a href="{% url 'documents:document_activity' d.pk %}" class="text-primary hover:underline">Activity</a>
+          · <a href="{% url 'documents:extraction_logs' %}?document={{ d.pk }}" class="text-primary hover:underline">Logs</a>
+          {% if d.status == 'pending_extraction' or d.status == 'audit_required' %}
+          · <button type="button" class="requeue-doc text-on-surface-variant hover:text-primary" data-url="{% url 'invoice-requeue' d.pk %}">Requeue</button>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7" class="px-4 py-8 text-center text-on-surface-variant">No documents match your filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if is_paginated %}
+<nav class="mt-4 font-label-sm text-on-surface-variant">Page {{ page_obj.number }} of {{ paginator.num_pages }}</nav>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  function getCookie(name) {
+    const value = '; ' + document.cookie;
+    const parts = value.split('; ' + name + '=');
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return '';
+  }
+  const csrf = getCookie('csrftoken');
+  document.querySelectorAll('.requeue-doc').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      const url = btn.getAttribute('data-url');
+      fetch(url, { method: 'POST', headers: { 'X-CSRFToken': csrf || '' }, credentials: 'same-origin' })
+        .then(function (r) {
+          if (r.ok) { btn.textContent = 'Queued'; btn.disabled = true; return; }
+          return r.json().then(function (j) { throw new Error((j && j.detail) || String(r.status)); });
+        })
+        .catch(function (e) { alert(e.message || 'Failed'); });
+    });
+  });
+})();
+</script>
+{% endblock %}

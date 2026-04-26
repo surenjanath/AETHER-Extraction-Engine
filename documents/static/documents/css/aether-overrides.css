@@ -1,0 +1,76 @@
+/* Skip link (a11y) */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.skip-link:focus {
+  position: fixed;
+  left: 0.75rem;
+  top: 0.75rem;
+  z-index: 100;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  background: #e2e2e2;
+  color: #131313;
+  border-radius: 0.25rem;
+  font-size: 14px;
+  font-weight: 500;
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Django messages + misc outside Tailwind utilities */
+.django-messages {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+.django-messages li {
+  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  font-size: 14px;
+}
+.django-messages li.success {
+  background: rgba(198, 198, 207, 0.12);
+  border: 1px solid #444748;
+  color: #e5e2e1;
+}
+.django-messages li.error,
+.django-messages li.debug {
+  background: rgba(255, 180, 171, 0.08);
+  border: 1px solid rgba(255, 180, 171, 0.35);
+  color: #ffb4ab;
+}
+
+/* Error list from forms */
+.aether-errorlist {
+  color: #ffb4ab;
+  font-size: 13px;
+  margin: 0.25rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Light OS: soften chrome only; full light tokens need a compiled theme pass */
+@media (prefers-color-scheme: light) {
+  html.dark {
+    color-scheme: dark;
+  }
+}
