@@ -65,6 +65,18 @@ ollama pull glm-ocr:latest
 ollama pull qwen2.5:7b
 ```
 
+### Recommended model setup (best for this project)
+
+Use this pair as the default:
+
+- **OCR model:** `glm-ocr:latest`
+- **Text/parse model:** `qwen2.5:7b`
+
+Why this combo works well:
+
+- `glm-ocr:latest` is strong for receipt text extraction and noisy scans.
+- `qwen2.5:7b` gives good structured JSON parsing quality at reasonable local speed.
+
 ### 4) Start Django app
 
 ```powershell
@@ -104,8 +116,8 @@ Use `.env` for core Django config:
 
 Use **`/app/settings/`** (or Django admin system settings) for model runtime config:
 - Ollama base URL
-- OCR model name
-- Text model name
+- OCR model name (`glm-ocr:latest` recommended)
+- Text model name (`qwen2.5:7b` recommended)
 - vision-first toggle
 
 Note: runtime model settings are DB-backed; they are not read from `.env` on every request.
@@ -154,25 +166,3 @@ python -m pytest documents/tests/ -v
   - `FILE_UPLOAD_MAX_MEMORY_SIZE`
   in `config/settings.py`.
 - OCR is fully local through Ollama (no Tesseract dependency).
-
-## Push to GitHub
-
-If this is an existing repository:
-
-```powershell
-git status
-git add .
-git commit -m "Improve README, branding assets, and setup scripts"
-git push
-```
-
-If this is a new repository:
-
-```powershell
-git init
-git add .
-git commit -m "Initial commit: Offline Receipt System"
-git branch -M main
-git remote add origin https://github.com/<your-username>/<your-repo>.git
-git push -u origin main
-```
